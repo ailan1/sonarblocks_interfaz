@@ -9,10 +9,9 @@ on:
     branches:
       - main
 
+# Dejamos solo esta para forzar la versión moderna
 env:
-  # Estas líneas silencian las advertencias de GitHub y fuerzan Node 24 para las acciones
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   build_and_deploy_job:
@@ -20,23 +19,22 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@v5 # Actualizado a v5
+      - uses: actions/checkout@v5
         with:
           submodules: true
           lfs: false
           persist-credentials: false
 
-      # ESTE PASO ES CLAVE PARA REACT:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22' # Forzamos una versión moderna de Node para compilar React
+          node-version: '22' # Usamos Node 22 que es estable y moderno
           cache: 'npm'
 
-      - name: Install Dependencies & Build
+      - name: Install and Build
         run: |
           npm install
-          npm run build
+          npm run build --if-present
 
       - name: Build And Deploy
         id: builddeploy
@@ -49,9 +47,9 @@ jobs:
           api_location: "" 
           # IMPORTANTE: 
           # Si usas Vite, cambia "build" por "dist"
-          # Si usas Create React App, déjalo en "build"
+          # Si usas Create React App es "build"
           output_location: "build" 
-          skip_app_build: true # Ya lo construimos arriba, así evitamos conflictos de versiones en el runner de Azure
+          skip_app_build: true # Esto evita que Azure intente compilar de nuevo con versiones viejas
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
