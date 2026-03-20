@@ -10,7 +10,9 @@ on:
       - main
 
 env:
+  # Estas líneas silencian las advertencias de GitHub y fuerzan Node 24 para las acciones
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   build_and_deploy_job:
@@ -18,27 +20,38 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      # ACTUALIZADO: De v4 a v5 para soporte nativo de Node 24
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5 # Actualizado a v5
         with:
           submodules: true
           lfs: false
           persist-credentials: false
 
-      - name: Fix git config
-        run: git config --global --unset-all http.https://github.com/.extraheader || true
+      # ESTE PASO ES CLAVE PARA REACT:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22' # Forzamos una versión moderna de Node para compilar React
+          cache: 'npm'
+
+      - name: Install Dependencies & Build
+        run: |
+          npm install
+          npm run build
 
       - name: Build And Deploy
         id: builddeploy
-        # REVISA: Azure suele actualizar esta acción. Asegúrate que v1 esté al día
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_OCEAN_05194B91E }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "/"
-          api_location: ""
-          output_location: "build"
+          app_location: "/" 
+          api_location: "" 
+          # IMPORTANTE: 
+          # Si usas Vite, cambia "build" por "dist"
+          # Si usas Create React App, déjalo en "build"
+          output_location: "build" 
+          skip_app_build: true # Ya lo construimos arriba, así evitamos conflictos de versiones en el runner de Azure
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
