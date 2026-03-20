@@ -9,7 +9,6 @@ on:
     branches:
       - main
 
-# Dejamos solo esta para forzar la versión moderna
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -28,11 +27,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22' # Usamos Node 22 que es estable y moderno
+          node-version: '20' # Node 20 es más compatible con proyectos React actuales
           cache: 'npm'
 
       - name: Install and Build
-        run: CI=false npm run build
+        # IMPORTANTE: Necesitas npm install antes del build
+        run: |
+          npm install
+          CI=false npm run build
 
       - name: Build And Deploy
         id: builddeploy
@@ -43,11 +45,10 @@ jobs:
           action: "upload"
           app_location: "/" 
           api_location: "" 
-          # IMPORTANTE: 
-          # Si usas Vite, cambia "build" por "dist"
-          # Si usas Create React App es "build"
+          # VERIFICACIÓN FINAL: 
+          # Si tu proyecto usa Vite, cambia "build" por "dist" abajo.
           output_location: "build" 
-          skip_app_build: true # Esto evita que Azure intente compilar de nuevo con versiones viejas
+          skip_app_build: true 
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
