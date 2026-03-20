@@ -10,6 +10,7 @@ on:
       - main
 
 env:
+  # Forzamos Node 24 para las acciones internas de GitHub
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -27,11 +28,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Node 20 es más compatible con proyectos React actuales
+          node-version: '20'
           cache: 'npm'
 
       - name: Install and Build
-        # IMPORTANTE: Necesitas npm install antes del build
+        # CI=false evita que el build falle por advertencias (warnings) de React
         run: |
           npm install
           CI=false npm run build
@@ -45,9 +46,12 @@ jobs:
           action: "upload"
           app_location: "/" 
           api_location: "" 
-          # VERIFICACIÓN FINAL: 
-          # Si tu proyecto usa Vite, cambia "build" por "dist" abajo.
-          output_location: "build" 
+          
+          # ⬇️ CONFIGURACIÓN CRÍTICA PARA REACT ⬇️
+          # Si usas Vite, deja "dist". Si usas Create-React-App, cambia a "build"
+          output_location: "dist" 
+          
+          # Indicamos que ya hicimos el build arriba manualmente
           skip_app_build: true 
 
   close_pull_request_job:
