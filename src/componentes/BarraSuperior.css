@@ -1,0 +1,78 @@
+/* Contenedor principal de la barra */
+.barra-superior {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 16px 32px;
+  border-bottom: 1px solid #E5E7EB;
+  width: 100%;
+  box-sizing: border-box; 
+  gap: 16px;
+}
+
+
+.logo-aplicacion {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  
+  flex: 1; 
+  min-width: 0; 
+}
+
+.titulo-app {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: w; 
+  white-space: nowrap; /* Evita que el texto se parta */
+}
+
+.logo-makecode {
+  height: 32px;
+  width: auto;
+  max-width: 150px; /* Límite máximo */
+  object-fit: contain;
+  filter: invert(1) opacity(0.8); 
+  flex-shrink: 1; /* Permite que el logo se achique si la pantalla es chica */
+}
+
+.logo-cyt {
+  height: 40px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
+  flex-shrink: 1;
+}
+
+
+/* Estilos del Botón de Conectar */
+.btn-conectar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #0033CC; 
+  color: #ffffff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap; /* Evita que el texto del botón se deforme */
+}
+
+.btn-texto {
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-atajo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #E0E7FF; 
+  margin-top: 2px;
+}

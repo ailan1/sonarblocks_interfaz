@@ -1,0 +1,140 @@
+/* =========================================
+   Tema de Alto Contraste (Claro)
+   Fondo: Blanco / Textos: Negro / Acentos: Azul Rey Oscuro
+========================================= */
+
+.dashboard-accesible {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #FFFFFF; /* Blanco puro para máximo contraste */
+  min-height: 100vh;
+  color: #000000; /* Texto negro puro */
+  margin: 0;
+}
+
+
+/* --- Estilos para el Contenido Principal --- */
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 32px;
+}
+
+.hero-card {
+  background-color: #F8F9FA; /* Gris casi blanco para la tarjeta */
+  border: 4px solid #000000;
+  border-radius: 16px;
+  padding: 40px;
+  margin-bottom: 48px;
+}
+
+.hero-card h1 {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #000000;
+  margin: 0 0 20px 0;
+}
+
+.hero-card p {
+  font-size: 1.5rem; 
+  color: #000000;
+  margin: 0 0 32px 0;
+  max-width: 800px;
+  line-height: 1.5;
+  font-weight: 500; /* Un poco más de peso a la fuente ayuda mucho */
+}
+
+.start-btn {
+  background-color: #0033CC; /* Azul rey oscuro, excelente contraste sobre blanco */
+  color: #FFFFFF;
+  border: 4px solid #0033CC;
+  padding: 16px 32px;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.start-btn:hover,
+.start-btn:focus {
+  background-color: #FFFFFF;
+  color: #0033CC;
+  outline: 4px solid #000000;
+  outline-offset: 4px;
+}
+
+/* --- Sección de Proyectos --- */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  border-bottom: 4px solid #000000;
+  padding-bottom: 16px;
+}
+
+.section-title h2 {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #000000;
+  margin: 0;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 32px;
+}
+
+.project-card {
+  background-color: #FFFFFF;
+  border: 4px solid #000000;
+  border-radius: 12px;
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  cursor: pointer;
+}
+
+.project-card:hover,
+.project-card:focus {
+  border-color: #0033CC;
+  background-color: #F0F4FF; /* Fondo celeste muy clarito al enfocar */
+  outline: none;
+  box-shadow: 0 0 0 4px #0033CC; /* Anillo de foco azul */
+}
+
+.card-icon-wrapper {
+  color: #000000; /* Íconos en negro puro */
+}
+
+.project-card:hover .card-icon-wrapper,
+.project-card:focus .card-icon-wrapper {
+  color: #0033CC; /* Cambian a azul al enfocar */
+}
+
+.card-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #000000;
+}
+
+.card-content p {
+  margin: 0;
+  font-size: 1.125rem;
+  color: #333333; /* Gris muy oscuro */
+  font-weight: 600;
+}
+.project-card:focus {
+  outline: 4px solid #3b82f6; /* Un color llamativo */
+  outline-offset: 4px;
+  transform: translateY(-5px);
+  background-color: #f0f7ff;
+}
+.focused-custom {
+  border: 3px solid #3b82f6 !important;
+  background-color: #ebf5ff !important;
+  transform: scale(1.05);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+}
