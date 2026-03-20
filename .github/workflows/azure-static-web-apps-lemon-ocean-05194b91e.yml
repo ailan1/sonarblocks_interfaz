@@ -9,7 +9,6 @@ on:
     branches:
       - main
 
-# ✅ 👇 AGREGÁ ESTO
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -19,7 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@v4
+      # ACTUALIZADO: De v4 a v5 para soporte nativo de Node 24
+      - uses: actions/checkout@v5
         with:
           submodules: true
           lfs: false
@@ -30,6 +30,7 @@ jobs:
 
       - name: Build And Deploy
         id: builddeploy
+        # REVISA: Azure suele actualizar esta acción. Asegúrate que v1 esté al día
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_OCEAN_05194B91E }}
