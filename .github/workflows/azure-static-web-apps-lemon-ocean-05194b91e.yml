@@ -15,21 +15,21 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      # ✅ FIX 1: actualizar checkout + evitar credenciales
+      # ✅ Checkout actualizado
       - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
           persist-credentials: false
 
-      # ✅ FIX 2: limpiar config de git (tu error principal)
+      # ✅ Fix para error de git (extraheader)
       - name: Fix git config
         run: git config --global --unset-all http.https://github.com/.extraheader || true
 
-      # ✅ FIX 3: actualizar action de Azure
+      # ✅ Build y deploy a Azure
       - name: Build And Deploy
         id: builddeploy
-        uses: Azure/static-web-apps-deploy@v2
+        uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_OCEAN_05194B91E }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -43,10 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
-      # (opcional pero recomendado actualizar también)
       - name: Close Pull Request
         id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v2
+        uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_OCEAN_05194B91E }}
           action: "close"
