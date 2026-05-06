@@ -8,7 +8,7 @@ export const NARRATIVA = {
   PROGRAMEMOSROBOBIT:       '¡Perfecto! Vamos a armar juntos el programa para Robo:bit. ¡Vos podés!',
   INTRUCCIONESCONECTAR:     'Conectando el robot. Asegurate de que el Robo:bit esté encendido y cerquita. ¡Ya casi!',
   ROBOBITCONECTADO:         '¡Genial! El Robo:bit está conectado y listo para recibir tus órdenes.',
-  DESCONECTADO:             '¡Uy! Parece que el robot no está conectado todavía. Presioná la C para conectarlo, y después lo intentamos de nuevo. ¡Sin apuro!',
+  DESCONECTADO:             '¡Uy! Parece que el robot no está conectado todavía. Presioná la C para conectarlo, y después lo intentamos de nuevo.',
   CATEGORIAS:               'Usá Tab para moverte entre las secciones. Cuando estés en Categorías, las flechitas cambian la categoría. ¡Y la letra de cada bloque lo agrega a tu programa!',
   INICIO:                   'Categoría Inicio. Presioná el 1 para poner el bloque Al empezar. ¡Acá comienza tu programa!',
   MOVIMIENTO:               'Categoría Movimiento. Presioná 1 para Avanzar, 2 para girar a la Izquierda, 3 para girar a la Derecha.',
