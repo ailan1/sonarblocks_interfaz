@@ -3,36 +3,45 @@ name: Azure Static Web Apps CI/CD
 on:
   push:
     branches:
-      - main  # Cambia si tu rama principal es otra
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
 
 jobs:
-  build-and-deploy:
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-
+    name: Build and Deploy Job
     steps:
-      # 1️⃣ Clonar el repositorio
       - uses: actions/checkout@v3
+        with:
+          submodules: true
+          lfs: false
 
-      # 2️⃣ Configurar Node.js
+      # 1️⃣ Configurar Node
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
 
-      # 3️⃣ Instalar dependencias
+      # 2️⃣ Instalar dependencias
       - name: Install dependencies
         run: npm install
 
-      # 4️⃣ Build de React (ignora warnings de ESLint)
-      - name: Build
+      # 3️⃣ Build de React ignorando warnings
+      - name: Build React
         run: CI=false npm run build
 
-      # 5️⃣ Deploy a Azure Static Web App
-      - name: Deploy to Azure Static Web App
+      # 4️⃣ Deploy a Azure Static Web App
+      - name: Build And Deploy
+        id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GREEN_BUSH_06324E810 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "/"         # Carpeta donde está package.json
-          output_location: "build"  # Carpeta generada por npm run build
+          app_location: "/"          # carpeta con package.json
+          api_location: "api"        # opcional
+          output_location: "build"   # carpeta generada por npm run build
