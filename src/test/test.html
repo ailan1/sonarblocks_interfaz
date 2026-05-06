@@ -1,26 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <title>Dirección del Mouse</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #111;
+      color: #0f0;
+      padding: 20px;
+    }
+    #output {
+      font-size: 24px;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-    <button id="btn">Hablar</button>
+
+<h2>Detector de dirección</h2>
+<p>Mové el mouse 👇</p>
+
+<div id="output">Esperando movimiento...</div>
 
 <script>
-  const btn = document.getElementById("btn");
+let lastX = null;
+let lastY = null;
+let ultimaDireccion = "";
 
-  btn.onclick = () => {
-    const msg = new SpeechSynthesisUtterance("Hola mundo prueba final");
+const output = document.getElementById("output");
 
-    msg.onstart = () => console.log("▶️ start");
-    msg.onend = () => console.log("⏹ end");
-    msg.onerror = (e) => console.error("❌ error:", e);
+document.addEventListener("mousemove", (e) => {
+  if (lastX === null || lastY === null) {
+    lastX = e.clientX;
+    lastY = e.clientY;
+    return;
+  }
 
-    speechSynthesis.speak(msg);
-  };
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+
+  let direccion = "";
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    // Movimiento horizontal
+    if (dx > 0) direccion = "derecha";
+    else if (dx < 0) direccion = "izquierda";
+  } else {
+    // Movimiento vertical
+    if (dy > 0) direccion = "abajo";
+    else if (dy < 0) direccion = "arriba";
+  }
+
+  // Evita repetir lo mismo constantemente
+  if (direccion && direccion !== ultimaDireccion) {
+    output.textContent = direccion.toUpperCase();
+    console.log(direccion);
+    ultimaDireccion = direccion;
+  }
+
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
 </script>
-    
+
 </body>
 </html>

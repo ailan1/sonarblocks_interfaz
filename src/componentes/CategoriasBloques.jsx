@@ -6,21 +6,6 @@ const CategoriasBloques = ({ onAgregarBloque, categoriasBloques, deshabilitado, 
   const { hablar,hablarYEsperar,narrativa} = useAudio();
 
 
-  
-
-  
-  useEffect(() => {
-    if (!deshabilitado) {
-      const timer = setTimeout(() => {
-      // hablar(narrativa.INTROROBOBIT)
-       
-   
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [categoriasBloques, hablar, deshabilitado]);
-
   return (
     <div className="paleta-bloques">
       <h2>Bloques Disponibles</h2>

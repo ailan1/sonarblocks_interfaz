@@ -47,7 +47,7 @@ export const useMicrobit = () => {
 
       // Filtro optimizado para que aparezca en la lista
       console.log(localStorage.getItem("microbit"))
-      const nombre = "BBC micro:bit "+ localStorage.getItem("microbit");
+      const nombre = "BBC micro:bit";
       const device = await navigator.bluetooth.requestDevice({
         filters: [
           { namePrefix: nombre }
