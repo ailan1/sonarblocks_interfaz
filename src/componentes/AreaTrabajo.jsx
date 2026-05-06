@@ -12,9 +12,6 @@ const AreaTrabajo = ({ bloques, onAgregarBloque, modo, ejecutando }) => {
       isOver: monitor.isOver(),
     }),
   }));
-  const { hablar,narrativa} = useAudio();
-  
-
   return (
     <div 
       ref={drop} 

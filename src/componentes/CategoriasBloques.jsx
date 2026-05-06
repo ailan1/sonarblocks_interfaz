@@ -3,7 +3,6 @@ import Bloque from "./Bloque";
 import { useAudio } from '../hooks/useAudio';
 
 const CategoriasBloques = ({ onAgregarBloque, categoriasBloques, deshabilitado, categoriaSeleccionada, modoNavegacion }) => {
-  const { hablar,hablarYEsperar,narrativa} = useAudio();
 
 
   return (

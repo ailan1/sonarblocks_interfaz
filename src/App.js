@@ -23,9 +23,6 @@ function App() {
     () => localStorage.getItem('onboarding_visto') !== 'false'
   );
 
-  const { hablar } = useAudio();
-
-  // ── Una sola instancia de microbit para toda la app ──────────────────────
   const {
     conectarMicrobit,
     enviarComando,
