@@ -79,13 +79,14 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
   };
 
   const ejecutarPrograma = useCallback(async () => {
-    if (ejecutando)              { hablar('El programa ya se está ejecutando');         return; }
-    if (bloques[0] !== 'Al empezar') { hablar(narrativa.BLOQUEINICIOPARACOMENZAR);     return; }
-    if (bloques.length === 1)    { hablar('Tu programa está vacío. Agrega más bloques'); return; }
-    if (!estaConectado)          { hablar(narrativa.DESCONECTADO);                      return; }
+    if (ejecutando)                  { hablar('El programa ya se está ejecutando');          return; }
+    if (bloques[0] !== 'Al empezar') { hablar(narrativa.BLOQUEINICIOPARACOMENZAR);          return; }
+    if (bloques.length === 1)        { hablar('Tu programa está vacío. Agrega más bloques'); return; }
 
     setEjecutando(true);
     setBloqueActual(null);
+
+    if (!estaConectado) hablar(narrativa.DESCONECTADO);
 
     try {
       for (let i = 1; i < bloques.length; i++) {
@@ -94,13 +95,17 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
         const bloqueData = obtenerBloque(tipoProgramacion, bloque);
         if (!bloqueData) continue;
 
-        // ← El simulador reacciona a este cambio exactamente cuando el robot físico actúa
         setBloqueActual(bloqueData.nombre);
 
+        // Hablar en paralelo — no bloquea el loop
         const mensajeAudio = NARRATIVA_EJECUTAR[bloqueData.nombre];
-        if (mensajeAudio) await hablarYEsperar(mensajeAudio);
-        if (enviarComando) await enviarComando(bloqueData.codigo);
-        await esperar(500);
+        if (mensajeAudio) hablar(mensajeAudio);
+
+        // Enviar al robot físico si está conectado
+        if (estaConectado && enviarComando) await enviarComando(bloqueData.codigo);
+
+        // Esperar tiempo fijo por bloque para que el simulador y el robot tengan tiempo de actuar
+        await esperar(2000);
       }
       hablar(narrativa.FINPROGRAMACION);
     } catch (err) {
@@ -110,7 +115,7 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
       setEjecutando(false);
       setBloqueActual(null);
     }
-  }, [ejecutando, bloques, tipoProgramacion, estaConectado, enviarComando, hablar, hablarYEsperar, narrativa]);
+  }, [ejecutando, bloques, tipoProgramacion, estaConectado, enviarComando, hablar, narrativa]);
 
   const leerPrograma = useCallback(async () => {
     if (bloques.length === 0) { hablar('El programa está vacío'); return; }
