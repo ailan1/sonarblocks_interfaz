@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 
-const TAMANO_ARENA = 500;
+const TAMANO_ARENA = 300;
 const PASO_MOVIMIENTO = 60;
 const DURACION_PASO = 2800; // ms, más lento
 

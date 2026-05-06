@@ -4,15 +4,7 @@ import { useAudio } from '../hooks/useAudio';
 import ControlVelocidad from './ControlVelocidad';
 import '../estilos/BarraSuperior.css';
 
-/**
- * BarraSuperior
- *
- * Cambios del informe de testeo:
- * - Eliminados los listeners de teclado propios (C y Tab).
- *   Toda la gestión de teclado vive en useTeclado.js, no en los componentes.
- * - Integrado ControlVelocidad para ajustar la velocidad del TTS.
- * - pararAudio() al conectar para limpiar la cola antes de hablar.
- */
+
 const BarraSuperior = ({
   tipoProgramacion,
   onConectar,
@@ -33,20 +25,6 @@ const BarraSuperior = ({
     <header className="barra-superior">
       <div className="logo-aplicacion">
         <span className="titulo-app">SonarBlocks</span>
-        {tipoProgramacion && (
-          <span
-            style={{
-              fontSize: '0.9rem',
-              color: '#555',
-              fontWeight: 600,
-              border: '1px solid #ddd',
-              borderRadius: 6,
-              padding: '2px 10px',
-            }}
-          >
-            {tipoProgramacion}
-          </span>
-        )}
         <img className="logo-cyt" src={CYT} alt="Logo CYT" />
       </div>
 
@@ -63,9 +41,9 @@ const BarraSuperior = ({
               padding: '2px 10px',
             }}
           >
-            {seccionActiva === 'categorias'   && '📂 Categorías'}
-            {seccionActiva === 'area-trabajo' && '📝 Área de trabajo'}
-            {seccionActiva === 'ejecucion'    && '▶ Ejecución'}
+            {seccionActiva === 'categorias'   && 'Categorías'}
+            {seccionActiva === 'area-trabajo' && 'Área de trabajo'}
+            {seccionActiva === 'ejecucion'    && 'Ejecución'}
           </span>
         )}
 
