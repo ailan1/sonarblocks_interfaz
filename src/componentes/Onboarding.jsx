@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAudio } from '../hooks/useAudio';
-import './Onboarding.css';
+import '../estilos/Onboarding.css';
 
 const PASOS = [
   {
@@ -202,14 +202,15 @@ const PASOS = [
 ];
 
 const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicrobit, estaConectado }) => {
-  const { hablar, pararAudio, desbloquearAudio } = useAudio();
+  const { hablarYEsperar, pararAudio, desbloquearAudio } = useAudio();
 
-  const [fase, setFase]                       = useState('bienvenida');
-  const [pasoActual, setPasoActual]           = useState(0);
-  const [estado, setEstado]                   = useState('esperando');
-  const [saliendo, setSaliendo]               = useState(false);
-  const [estadoConectar, setEstadoConectar]   = useState('esperando');
+  const [fase, setFase]                     = useState('bienvenida');
+  const [pasoActual, setPasoActual]         = useState(0);
+  const [estado, setEstado]                 = useState('esperando');
+  const [saliendo, setSaliendo]             = useState(false);
+  const [estadoConectar, setEstadoConectar] = useState('esperando');
 
+  // bloqueadoRef: true mientras habla o mientras espera timeout post-tecla
   const bloqueadoRef  = useRef(false);
   const pasoRef       = useRef(0);
   const faseRef       = useRef('bienvenida');
@@ -217,10 +218,15 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
   useEffect(() => { pasoRef.current = pasoActual; }, [pasoActual]);
   useEffect(() => { faseRef.current = fase;        }, [fase]);
 
-  const narrarPaso = useCallback((indice) => {
-    pararAudio();
-    setTimeout(() => hablar(PASOS[indice].audio), 400);
-  }, [hablar, pararAudio]);
+  // narrarPaso: espera que termine el audio y recién entonces desbloquea el teclado
+  const narrarPaso = useCallback(async (indice) => {
+    bloqueadoRef.current = true;
+    await hablarYEsperar(PASOS[indice].audio);
+    // Solo desbloquear si seguimos en el mismo paso (no hubo salto externo)
+    if (pasoRef.current === indice && faseRef.current === 'tutorial') {
+      bloqueadoRef.current = false;
+    }
+  }, [hablarYEsperar]);
 
   const avanzarPaso = useCallback(() => {
     const siguiente = pasoRef.current + 1;
@@ -229,7 +235,6 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
       localStorage.setItem('onboarding_visto', 'true');
       setTimeout(() => onTerminar(), 600);
     } else {
-      bloqueadoRef.current = false;
       setEstado('esperando');
       setEstadoConectar('esperando');
       setPasoActual(siguiente);
@@ -237,7 +242,7 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
     }
   }, [onTerminar, narrarPaso]);
 
-  // Cuando estaConectado cambia a true y estamos en paso conectar, avanzamos
+  // Cuando estaConectado cambia a true en el paso conectar, avanzamos
   useEffect(() => {
     if (
       estaConectado &&
@@ -246,10 +251,10 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
     ) {
       setEstadoConectar('conectado');
       pararAudio();
-      hablar('¡El robot está conectado! Muy bien.');
-      setTimeout(() => avanzarPaso(), 2500);
+      bloqueadoRef.current = true;
+      hablarYEsperar('¡El robot está conectado! Muy bien.').then(() => avanzarPaso());
     }
-  }, [estaConectado, hablar, pararAudio, avanzarPaso]);
+  }, [estaConectado, hablarYEsperar, pararAudio, avanzarPaso]);
 
   const handleComenzar = useCallback(() => {
     desbloquearAudio();
@@ -257,10 +262,17 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
     setFase('tutorial');
     setPasoActual(0);
     pasoRef.current = 0;
-    bloqueadoRef.current = false;
     setEstado('esperando');
-    setTimeout(() => hablar(PASOS[0].audio), 150);
-  }, [desbloquearAudio, hablar]);
+    // narrarPaso bloquea el teclado hasta que termina el audio
+    setTimeout(() => narrarPaso(0), 150);
+  }, [desbloquearAudio, narrarPaso]);
+
+  const handleSalir = useCallback(() => {
+    pararAudio();
+    setSaliendo(true);
+    localStorage.setItem('onboarding_visto', 'true');
+    setTimeout(() => onTerminar(), 600);
+  }, [pararAudio, onTerminar]);
 
   const manejarTeclado = useCallback((e) => {
     if (faseRef.current === 'bienvenida') {
@@ -269,61 +281,64 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
     }
 
     if (e.key === 'Tab') e.preventDefault();
+
+    // Bloqueado mientras habla — ignorar toda tecla
     if (bloqueadoRef.current) return;
 
     const paso = PASOS[pasoRef.current];
 
-    // Info — solo Enter avanza
+    // ── Info: solo Enter avanza, pero espera que termine el audio del paso siguiente ──
     if (paso.tipo === 'info') {
       if (e.key === 'Enter') avanzarPaso();
       return;
     }
 
-    // Cualquier tecla avanza
+    // ── Cualquier tecla avanza ──
     if (paso.tipo === 'cualquier-tecla') {
       avanzarPaso();
       return;
     }
 
-    // Conectar — C abre el diálogo, después espera estaConectado
+    // ── Conectar ──
     if (paso.tipo === 'conectar') {
       if (e.key.toLowerCase() === 'c' && estadoConectar === 'esperando') {
         setEstadoConectar('conectando');
-        pararAudio();
-        hablar('Abriendo ventana de conexión. Usá Tab para moverte, flecha abajo para bajar en la lista, y Enter para conectar.');
+        bloqueadoRef.current = true;
+        hablarYEsperar('Abriendo ventana de conexión. Usá Tab para moverte, flecha abajo para bajar en la lista, y Enter para conectar.')
+          .then(() => { bloqueadoRef.current = false; });
         conectarMicrobit();
       }
-      // Tab saltea el paso de conexión
       if (e.key === 'Tab' && estadoConectar !== 'conectado') {
-        e.preventDefault();
-        pararAudio();
-        hablar('Salteando conexión. Podés conectar el robot más tarde apretando C.');
-        setTimeout(() => avanzarPaso(), 2500);
+        bloqueadoRef.current = true;
+        hablarYEsperar('Salteando conexión. Podés conectar el robot más tarde apretando C.')
+          .then(() => avanzarPaso());
       }
       return;
     }
 
-    // Tecla específica
+    // ── Tecla específica ──
     const coincide = e.key.toLowerCase() === paso.teclaEsperada.toLowerCase();
 
     if (coincide) {
       bloqueadoRef.current = true;
       setEstado('exito');
-      pararAudio();
       if (paso.accion === 'agregar' && paso.bloque) {
         onAgregarBloque(paso.bloque);
       }
-      hablar(paso.audioExito);
-      setTimeout(() => avanzarPaso(), 2500);
+      // Espera que termine el audio de éxito y recién avanza
+      hablarYEsperar(paso.audioExito).then(() => avanzarPaso());
     } else {
+      bloqueadoRef.current = true;
       setEstado('error');
-      pararAudio();
-      hablar(paso.audioError);
-      setTimeout(() => {
-        if (faseRef.current === 'tutorial') setEstado('esperando');
-      }, 2500);
+      // Espera que termine el audio de error y desbloquea para que reintente
+      hablarYEsperar(paso.audioError).then(() => {
+        if (faseRef.current === 'tutorial') {
+          setEstado('esperando');
+          bloqueadoRef.current = false;
+        }
+      });
     }
-  }, [handleComenzar, avanzarPaso, hablar, pararAudio, onAgregarBloque, conectarMicrobit, estadoConectar]);
+  }, [handleComenzar, avanzarPaso, hablarYEsperar, pararAudio, onAgregarBloque, conectarMicrobit, estadoConectar]);
 
   useEffect(() => {
     window.addEventListener('keydown', manejarTeclado);
@@ -332,7 +347,7 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
 
   const progresoPct = (pasoActual / (PASOS.length - 1)) * 100;
 
-  // ── Bienvenida ────────────────────────────────────────────────────────────
+  // ── Bienvenida ──────────────────────────────────────────────────────────
   if (fase === 'bienvenida') {
     return (
       <div
@@ -342,6 +357,12 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
         aria-label="Bienvenida a SonarBlocks"
       >
         <div className="onboarding-modal onboarding-bienvenida">
+          <button
+            className="onboarding-btn-cerrar"
+            onClick={handleSalir}
+            aria-label="Saltar tutorial y cerrar"
+            title="Saltar tutorial"
+          >✕</button>
           <div className="onboarding-icono" style={{ fontSize: '4rem' }}>🤖</div>
           <h2 className="onboarding-titulo">¡Bienvenido a SonarBlocks!</h2>
           <p className="onboarding-descripcion">
@@ -361,7 +382,7 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
     );
   }
 
-  // ── Tutorial ──────────────────────────────────────────────────────────────
+  // ── Tutorial ────────────────────────────────────────────────────────────
   const paso = PASOS[pasoActual];
 
   return (
@@ -372,6 +393,13 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
       aria-label="Tutorial de bienvenida"
     >
       <div className="onboarding-modal">
+
+        <button
+          className="onboarding-btn-cerrar"
+          onClick={handleSalir}
+          aria-label="Saltar tutorial y cerrar"
+          title="Saltar tutorial"
+        >✕</button>
 
         <div className="onboarding-barra-wrap" aria-label={`Paso ${pasoActual + 1} de ${PASOS.length}`}>
           <div className="onboarding-barra-fondo">

@@ -2,7 +2,7 @@ import React from 'react';
 import CYT from '../CYT.png';
 import { useAudio } from '../hooks/useAudio';
 import ControlVelocidad from './ControlVelocidad';
-import './BarraSuperior.css';
+import '../estilos/BarraSuperior.css';
 
 /**
  * BarraSuperior

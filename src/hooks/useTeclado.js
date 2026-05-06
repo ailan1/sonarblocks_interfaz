@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAudio } from './useAudio';
 
-
 const SECCIONES = ['categorias', 'area-trabajo', 'ejecucion'];
 
 export function useTeclado({
@@ -22,16 +21,28 @@ export function useTeclado({
 
   const { hablar, repetirUltimo, narrativa } = useAudio();
 
-  // Ref para leer el valor actualizado dentro del closure del listener
+  // ── Refs para valores que cambian pero no deben re-registrar el listener ──
   const seccionRef          = useRef(seccionActiva);
   const categoriaRef        = useRef(categoriaSeleccionada);
   const datosModoRef        = useRef(datosModoActual);
   const teclasRapidasRef    = useRef(teclasRapidasActuales);
 
-  useEffect(() => { seccionRef.current       = seccionActiva;         }, [seccionActiva]);
-  useEffect(() => { categoriaRef.current     = categoriaSeleccionada; }, [categoriaSeleccionada]);
-  useEffect(() => { datosModoRef.current     = datosModoActual;       }, [datosModoActual]);
-  useEffect(() => { teclasRapidasRef.current = teclasRapidasActuales; }, [teclasRapidasActuales]);
+  // ── Refs para callbacks — evitan stale closures en el listener ────────────
+  const onAgregarBloqueRef  = useRef(onAgregarBloque);
+  const onEliminarUltimoRef = useRef(onEliminarUltimo);
+  const onEjecutarRef       = useRef(onEjecutar);
+  const onLeerProgramaRef   = useRef(onLeerPrograma);
+  const onConectarRef       = useRef(onConectar);
+
+  useEffect(() => { seccionRef.current          = seccionActiva;         }, [seccionActiva]);
+  useEffect(() => { categoriaRef.current        = categoriaSeleccionada; }, [categoriaSeleccionada]);
+  useEffect(() => { datosModoRef.current        = datosModoActual;       }, [datosModoActual]);
+  useEffect(() => { teclasRapidasRef.current    = teclasRapidasActuales; }, [teclasRapidasActuales]);
+  useEffect(() => { onAgregarBloqueRef.current  = onAgregarBloque;       }, [onAgregarBloque]);
+  useEffect(() => { onEliminarUltimoRef.current = onEliminarUltimo;      }, [onEliminarUltimo]);
+  useEffect(() => { onEjecutarRef.current       = onEjecutar;            }, [onEjecutar]);
+  useEffect(() => { onLeerProgramaRef.current   = onLeerPrograma;        }, [onLeerPrograma]);
+  useEffect(() => { onConectarRef.current       = onConectar;            }, [onConectar]);
 
   // Narrativa por nombre de categoría
   const NARRATIVA_CATEGORIAS = {
@@ -48,16 +59,16 @@ export function useTeclado({
   };
 
   useEffect(() => {
-   const manejarTecla = (e) => {
+    const manejarTecla = (e) => {
       if (deshabilitado) return;
       if (ejecutando && e.key !== 'Escape') return;
       const tecla = e.key.toLowerCase();
 
-      // ── TAB: navega entre secciones lógicas ────────────────────────────
+      // ── TAB: navega entre secciones lógicas ──────────────────────────────
       if (e.key === 'Tab' && tipoProgramacion !== '') {
         e.preventDefault();
         setModoNavegacion('navegacion-secciones');
-        const total    = SECCIONES.length;
+        const total     = SECCIONES.length;
         const idxActual = SECCIONES.indexOf(seccionRef.current);
         const siguiente = e.shiftKey
           ? (idxActual - 1 + total) % total
@@ -75,7 +86,7 @@ export function useTeclado({
         return;
       }
 
-      // ── FLECHAS: cambian categoría cuando la sección activa es "categorias" ─
+      // ── FLECHAS: cambian categoría (solo en sección "categorias") ─────────
       if (seccionRef.current === 'categorias') {
         if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
           e.preventDefault();
@@ -102,32 +113,32 @@ export function useTeclado({
         }
       }
 
-      // ── ACCIONES GLOBALES (cualquier sección) ───────────────────────────
-      if (tecla === ' ')         { e.preventDefault(); onEjecutar();            return; }
-      if (tecla === 'l')         { onLeerPrograma();                            return; }
-      if (tecla === 'backspace') { onEliminarUltimo();                          return; }
-      if (tecla === 'r')         { repetirUltimo();                             return; }
-      if (tecla === 'c' && onConectar) { onConectar();                         return; }
-      if (tecla === 'h')         { hablar(narrativa.CATEGORIAS);                return; }
+      // ── ACCIONES GLOBALES (cualquier sección) ─────────────────────────────
+      if (tecla === ' ')         { e.preventDefault(); onEjecutarRef.current?.();       return; }
+      if (tecla === 'l')         { onLeerProgramaRef.current?.();                       return; }
+      if (tecla === 'backspace') { onEliminarUltimoRef.current?.();                     return; }
+      if (tecla === 'r')         { repetirUltimo();                                     return; }
+      if (tecla === 'c')         { onConectarRef.current?.();                           return; }
+      if (tecla === 'h')         { hablar(narrativa.CATEGORIAS);                        return; }
 
-      // ── AGREGAR BLOQUES (solo desde sección "categorias") ───────────────
+      // ── AGREGAR BLOQUES (solo desde sección "categorias") ─────────────────
       if (seccionRef.current !== 'categorias') return;
 
       const catActual = datosModoRef.current.categorias[categoriaRef.current];
       const bloqueEnCategoria = catActual?.bloques.find(
         (b) => b.tecla?.toLowerCase() === tecla
       );
-      if (bloqueEnCategoria) { onAgregarBloque(bloqueEnCategoria.nombre); return; }
+      if (bloqueEnCategoria) { onAgregarBloqueRef.current?.(bloqueEnCategoria.nombre); return; }
 
       if (teclasRapidasRef.current[tecla]) {
-        onAgregarBloque(teclasRapidasRef.current[tecla]);
+        onAgregarBloqueRef.current?.(teclasRapidasRef.current[tecla]);
       }
     };
 
     window.addEventListener('keydown', manejarTecla);
     return () => window.removeEventListener('keydown', manejarTecla);
 
-  },[ejecutando, deshabilitado, tipoProgramacion]);
+  }, [ejecutando, deshabilitado, tipoProgramacion]); // el listener se re-registra solo cuando cambian estos 3
 
   return { categoriaSeleccionada, seccionActiva, modoNavegacion };
 }

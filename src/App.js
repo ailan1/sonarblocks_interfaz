@@ -13,6 +13,7 @@ import { useTeclado } from './hooks/useTeclado';
 import { useAudio } from './hooks/useAudio';
 import { useMicrobit } from './hooks/useMicrobit';
 
+import RobotSimulador from './componentes/RobotSimulador';
 import { obtenerBloquesPorModo, obtenerTeclasRapidas } from './datos/bloquesData';
 import './estilos/App.css';
 
@@ -23,11 +24,19 @@ function App() {
   );
 
   const { hablar } = useAudio();
-  const { conectarMicrobit, estadoConexion, estaConectado } = useMicrobit();
 
-  const datosModoActual = obtenerBloquesPorModo(tipoProgramacion);
+  // ── Una sola instancia de microbit para toda la app ──────────────────────
+  const {
+    conectarMicrobit,
+    enviarComando,
+    estadoConexion,
+    estaConectado,
+  } = useMicrobit();
+
+  const datosModoActual       = obtenerBloquesPorModo(tipoProgramacion);
   const teclasRapidasActuales = obtenerTeclasRapidas(tipoProgramacion);
 
+  // ── useBloques recibe la instancia de microbit, no crea la suya ──────────
   const {
     bloques,
     ejecutando,
@@ -36,9 +45,9 @@ function App() {
     ejecutarPrograma,
     leerPrograma,
     limpiarBloques,
-  } = useBloques(tipoProgramacion);
+  } = useBloques(tipoProgramacion, { enviarComando, estaConectado });
 
-  const { categoriaSeleccionada, modoNavegacion } = useTeclado({
+  const { categoriaSeleccionada, modoNavegacion, seccionActiva } = useTeclado({
     tipoProgramacion,
     datosModoActual,
     teclasRapidasActuales,
@@ -69,6 +78,7 @@ function App() {
           estadoConexion={estadoConexion}
           ejecutando={ejecutando}
           modoNavegacion={modoNavegacion}
+          seccionActiva={seccionActiva}
         />
 
         <div className="contenido-principal">
@@ -97,6 +107,11 @@ function App() {
               ejecutando={ejecutando}
             />
           </div>
+
+          <RobotSimulador
+            bloques={bloques}
+            ejecutando={ejecutando}
+          />
         </div>
       </DndProvider>
     </div>
