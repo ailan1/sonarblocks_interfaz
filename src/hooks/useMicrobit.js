@@ -41,12 +41,29 @@ export const useMicrobit = () => {
   // =============================
   // CONECTAR
   // =============================
-  const conectarMicrobit = async () => {
+  // anunciar: false cuando quien llama ya explica los pasos (el tutorial)
+  const conectarMicrobit = async ({ anunciar = true } = {}) => {
+    if (!navigator.bluetooth) {
+      setEstadoConexion("Bluetooth no disponible");
+      hablar(narrativa.SINBLUETOOTH);
+      return;
+    }
+
+    // Si ya está conectado, no abrir la ventana otra vez (el chico se perdería en ella)
+    if (estaConectado) {
+      hablar(narrativa.YACONECTADO);
+      return;
+    }
+
+    // Se explica la ventana del navegador cada vez, no solo en el tutorial.
+    // Va antes de requestDevice y sin await: la ventana debe abrirse
+    // dentro del mismo evento de teclado o clic.
+    if (anunciar) hablar(`${narrativa.INTRUCCIONESCONECTAR} ${narrativa.VENTANACONEXION}`);
+
     try {
       setEstadoConexion("Buscando...");
 
       // Filtro optimizado para que aparezca en la lista
-      console.log(localStorage.getItem("microbit"))
       const nombre = "BBC micro:bit";
       const device = await navigator.bluetooth.requestDevice({
         filters: [
@@ -58,7 +75,8 @@ export const useMicrobit = () => {
       setEstadoConexion("Conectando al servidor...");
       deviceRef.current = device;
 
-      // Listener para desconexiones accidentales
+      // Listener para desconexiones accidentales (se quita antes por si es una reconexión)
+      device.removeEventListener('gattserverdisconnected', onDesconectado);
       device.addEventListener('gattserverdisconnected', onDesconectado);
 
       const server = await device.gatt.connect();
@@ -80,8 +98,10 @@ export const useMicrobit = () => {
 
     } catch (error) {
       console.error("Error de conexión Bluetooth:", error);
-      setEstadoConexion("Error: " + error.message);
+      // NotFoundError = se cerró la ventana sin elegir un robot
+      setEstadoConexion(error.name === "NotFoundError" ? "Desconectado" : "No se pudo conectar");
       setEstaConectado(false);
+      hablar(narrativa.ERRORCONEXION);
     }
   };
 
@@ -108,12 +128,13 @@ export const useMicrobit = () => {
   // =============================
   // DESCONECTAR
   // =============================
-  const onDesconectado = () => {
+  // useCallback: la misma función en cada render, así removeEventListener la encuentra
+  const onDesconectado = useCallback(() => {
     setEstaConectado(false);
     setEstadoConexion("Desconectado");
-    hablar(narrativa.DESCONECTADO)
+    hablar(narrativa.DESCONECTADO);
     caracteristicaEnviarRef.current = null;
-  };
+  }, [hablar, narrativa]);
 
   const desconectar = () => {
     if (deviceRef.current && deviceRef.current.gatt.connected) {

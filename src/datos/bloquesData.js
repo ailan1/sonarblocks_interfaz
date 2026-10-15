@@ -1,3 +1,6 @@
+// Colores del modo básico: paleta Okabe-Ito, distinguible con daltonismo.
+// Cada bloque tiene un color e ícono propios, para no depender solo del color.
+// El color del texto (blanco o negro) lo elige Bloque.jsx según el contraste.
 export const bloquesData = {
   base: {
     nombre: "Básico",
@@ -8,7 +11,8 @@ export const bloquesData = {
         bloques: [
           {
             nombre: "Al empezar",
-            color: "#00C853",
+            color: "#009E73",
+            icono: "🚩",
             tecla: "1",
             codigo: "start",
             descripcionAudio: "Bloque de inicio del programa",
@@ -20,21 +24,24 @@ export const bloquesData = {
         bloques: [
           {
             nombre: "Avanzar",
-            color: "#4B4BF9",
+            color: "#0072B2",
+            icono: "⬆",
             tecla: "1",
             codigo: "move_forward",
             descripcionAudio: "Avanzar"
           },
           {
             nombre: "Izquierda",
-            color: "#9966FF",
+            color: "#E69F00",
+            icono: "↰",
             tecla: "2",
             codigo: "turn_left",
             descripcionAudio: "Girar a la izquierda"
           },
           {
             nombre: "Derecha",
-            color: "#9966FF",
+            color: "#CC79A7",
+            icono: "↱",
             tecla: "3",
             codigo: "turn_right",
             descripcionAudio: "Girar a la derecha"
@@ -46,7 +53,8 @@ export const bloquesData = {
         bloques: [
           {
             nombre: "Esperar",
-            color: "#F2C037",
+            color: "#F0E442",
+            icono: "⏸",
             tecla: "1",
             codigo: "wait",
             descripcionAudio: "Esperar"
@@ -196,3 +204,20 @@ export const obtenerColorBloque = (modo, nombreBloque) => {
   const bloque = obtenerBloque(modo, nombreBloque);
   return bloque ? bloque.color : "#66ccff";
 };
+
+// Luminancia relativa según WCAG 2.1
+const luminancia = (hex) => {
+  const [r, g, b] = [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+export const contraste = (hexA, hexB) => {
+  const [claro, oscuro] = [luminancia(hexA), luminancia(hexB)].sort((a, b) => b - a);
+  return (claro + 0.05) / (oscuro + 0.05);
+};
+
+// Texto blanco o negro: el que más contraste tenga con el color del bloque
+export const colorTextoPara = (hexFondo) =>
+  contraste(hexFondo, "#FFFFFF") >= contraste(hexFondo, "#000000") ? "#FFFFFF" : "#000000";

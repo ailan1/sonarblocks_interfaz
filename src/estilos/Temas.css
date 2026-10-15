@@ -1,0 +1,107 @@
+/* ── Temas de color ─────────────────────────────────────────────────────────
+   Todos los colores de la interfaz salen de estas variables.
+   El tema se elige con el atributo data-tema en <html> (ver hooks/useTema.js).
+   Contrastes verificados con WCAG 2.1 AA: texto ≥ 4.5:1, bordes y controles ≥ 3:1.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+:root,
+[data-tema="estandar"] {
+  --fondo:               #F4F6FB;
+  --superficie:          #FFFFFF;
+  --fondo-area:          #F9FAFC;
+  --fondo-area-soltar:   #E3ECFF;
+  --texto:               #1A1A2E;
+  --texto-suave:         #4A5068;  /* 7.9:1 sobre blanco */
+  --borde:               #767C90;  /* 4.1:1 sobre blanco */
+  --borde-suave:         #D5D9E3;
+  --sombra:              0 2px 10px rgba(0, 0, 0, 0.1);
+
+  --acento:              #0033CC;  /* 8.9:1 sobre blanco */
+  --acento-texto:        #FFFFFF;
+  --acento-suave:        #E8EEFF;
+
+  --barra-fondo:         #0033CC;
+  --barra-texto:         #FFFFFF;
+  --barra-borde:         transparent;
+
+  --btn-claro-fondo:     #FFFFFF;
+  --btn-claro-texto:     #0033CC;
+  --btn-borde:           transparent;
+
+  --btn-ejecutar:        #1B7A3A;  /* blanco 5.4:1 */
+  --btn-ejecutar-texto:  #FFFFFF;
+  --btn-eliminar:        #B3261E;  /* blanco 6.5:1 */
+  --btn-eliminar-texto:  #FFFFFF;
+  --btn-leer:            #FFBF00;  /* texto oscuro 10.5:1 */
+  --btn-leer-texto:      #1A1A1A;
+
+  --bloque-borde:        rgba(0, 0, 0, 0.35);
+  --bloque-borde-ancho:  2px;
+
+  --foco:                #1A1A2E;
+  --foco-halo:           #FFE600;
+
+  --fondo-arena:         #E8F4FF;
+  --rastro:              rgba(76, 151, 255, 0.45);
+  --puntos-arena:        rgba(100, 150, 220, 0.35);
+}
+
+/* Alto contraste: negro, blanco y amarillo. Para chicos con baja visión. */
+[data-tema="alto-contraste"] {
+  --fondo:               #000000;
+  --superficie:          #000000;
+  --fondo-area:          #000000;
+  --fondo-area-soltar:   #222200;
+  --texto:               #FFFFFF;
+  --texto-suave:         #FFFFFF;
+  --borde:               #FFFFFF;
+  --borde-suave:         #FFFFFF;
+  --sombra:              none;
+
+  --acento:              #FFE600;  /* 16.6:1 sobre negro */
+  --acento-texto:        #000000;
+  --acento-suave:        #000000;
+
+  --barra-fondo:         #000000;
+  --barra-texto:         #FFFFFF;
+  --barra-borde:         #FFFFFF;
+
+  --btn-claro-fondo:     #000000;
+  --btn-claro-texto:     #FFE600;
+  --btn-borde:           #FFFFFF;
+
+  --btn-ejecutar:        #000000;
+  --btn-ejecutar-texto:  #FFE600;
+  --btn-eliminar:        #000000;
+  --btn-eliminar-texto:  #FFE600;
+  --btn-leer:            #000000;
+  --btn-leer-texto:      #FFE600;
+
+  --bloque-borde:        #FFFFFF;
+  --bloque-borde-ancho:  3px;
+
+  --foco:                #FFE600;
+  --foco-halo:           #000000;
+
+  --fondo-arena:         #000000;
+  --rastro:              #FFE600;
+  --puntos-arena:        rgba(255, 255, 255, 0.5);
+}
+
+/* ── Foco visible en todos los controles ─────────────────────────────────── */
+:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px var(--foco-halo);
+}
+
+/* ── Respeta "reducir movimiento" del sistema operativo ──────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

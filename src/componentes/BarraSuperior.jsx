@@ -1,25 +1,32 @@
 import React from 'react';
 import CYT from '../CYT.png';
-import { useAudio } from '../hooks/useAudio';
 import ControlVelocidad from './ControlVelocidad';
+import ControlContraste from './ControlContraste';
 import '../estilos/BarraSuperior.css';
 
+const NOMBRES_SECCION = {
+  'categorias':   'Categorías',
+  'area-trabajo': 'Área de trabajo',
+  'ejecucion':    'Ejecución',
+  'ajustes':      'Ajustes',
+  'conexion':     'Robot',
+};
 
 const BarraSuperior = ({
   tipoProgramacion,
   onConectar,
   estadoConexion,
+  estaConectado,
   ejecutando,
   modoNavegacion,
   seccionActiva,
+  etiquetaTema,
+  onCambiarTema,
+  etiquetaVelocidad,
+  onCambiarVelocidad,
 }) => {
-  const { hablar, pararAudio, narrativa } = useAudio();
-
-  const manejarConectar = () => {
-    pararAudio();
-    hablar(narrativa.ROBOBITCONECTADO);
-    onConectar();
-  };
+  // Los mensajes de voz de la conexión los dice conectarMicrobit (igual con la tecla C)
+  const manejarConectar = () => onConectar();
 
   return (
     <header className="barra-superior">
@@ -28,36 +35,32 @@ const BarraSuperior = ({
         <img className="logo-cyt" src={CYT} alt="Logo CYT" />
       </div>
 
-      <div className="controles-barra" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div className="controles-barra">
         {/* Indicador de sección activa — ayuda visual para usuarios videntes */}
         {seccionActiva && (
-          <span
-            aria-live="polite"
-            style={{
-              fontSize: '0.8rem',
-              color: '#666',
-              border: '1px solid #ddd',
-              borderRadius: 6,
-              padding: '2px 10px',
-            }}
-          >
-            {seccionActiva === 'categorias'   && 'Categorías'}
-            {seccionActiva === 'area-trabajo' && 'Área de trabajo'}
-            {seccionActiva === 'ejecucion'    && 'Ejecución'}
+          <span className="indicador-seccion" aria-live="polite">
+            {NOMBRES_SECCION[seccionActiva]}
           </span>
         )}
 
-        <ControlVelocidad />
+        <div className={`grupo-barra ${seccionActiva === 'ajustes' ? 'seccion-activa' : ''}`}>
+          <ControlVelocidad etiqueta={etiquetaVelocidad} onCambiar={onCambiarVelocidad} />
+          <ControlContraste etiqueta={etiquetaTema} onCambiar={onCambiarTema} />
+        </div>
 
-        <button
-          className="btn-conectar"
-          onClick={manejarConectar}
-          disabled={ejecutando}
-          aria-label={`Conectar al robot. Estado: ${estadoConexion || 'desconectado'}. Atajo de teclado: C`}
-        >
-          <span className="btn-texto">🔌 {estadoConexion || 'Conectar'}</span>
-          <span className="btn-atajo">Presioná C</span>
-        </button>
+        <div className={`grupo-barra ${seccionActiva === 'conexion' ? 'seccion-activa' : ''}`}>
+          <button
+            className="btn-barra btn-conectar"
+            onClick={manejarConectar}
+            disabled={ejecutando}
+            aria-label={`Conectar al robot. Estado: ${estadoConexion || 'desconectado'}. Atajo de teclado: C`}
+          >
+            <span className="btn-texto">
+              <span aria-hidden="true">{estaConectado ? '✅' : '🔌'}</span> {estadoConexion || 'Conectar'}
+            </span>
+            <span className="btn-atajo">Presioná C</span>
+          </button>
+        </div>
       </div>
     </header>
   );

@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 
 export const NARRATIVA = {
   BIENVENIDA:               '¡Hola! ¡Bienvenido a SonarBlocks! Usá Tab para elegir con qué modo querés jugar hoy, y Enter para empezar. ¡Va a ser muy divertido!',
@@ -9,7 +9,15 @@ export const NARRATIVA = {
   INTRUCCIONESCONECTAR:     'Conectando el robot. Asegurate de que el Robo:bit esté encendido y cerquita. ¡Ya casi!',
   ROBOBITCONECTADO:         '¡Genial! El Robo:bit está conectado y listo para recibir tus órdenes.',
   DESCONECTADO:             '¡Uy! Parece que el robot no está conectado todavía. Presioná la C para conectarlo, y después lo intentamos de nuevo.',
-  CATEGORIAS:               'Usá Tab para moverte entre las secciones. Cuando estés en Categorías, las flechitas cambian la categoría. ¡Y la letra de cada bloque lo agrega a tu programa!',
+  SINROBOT:                 'El robot no está conectado, así que se realizará en el simulador. Si querés usar el robot, presioná la C para conectarlo.',
+  ERRORCONEXION:            'No se pudo conectar el robot. Fijate que esté encendido y presioná la C para intentar de nuevo.',
+  VENTANACONEXION:          'Se va a abrir una ventana. Usá Tab para moverte, la flecha abajo para elegir tu robot, y Enter para conectarlo.',
+  YACONECTADO:              '¡El robot ya está conectado! Podés ejecutar tu programa.',
+  RECORDARCONECTAR:         'Recordá que el robot no está conectado. Presioná la C para conectarlo.',
+  SECCIONROBOTCONECTADO:    'Sección Robot. ¡El robot está conectado y listo!',
+  SECCIONROBOTDESCONECTADO: 'Sección Robot. El robot no está conectado. Presioná la C para conectarlo. Se va a abrir una ventana: usá Tab para moverte, la flecha abajo para elegir tu robot, y Enter para conectarlo.',
+  SINBLUETOOTH:             'Este navegador no puede conectarse al robot. Probá abrir SonarBlocks en Google Chrome.',
+  CATEGORIAS:               'Usá Tab para moverte entre las secciones. Cuando estés en Categorías, las flechitas cambian la categoría. ¡Y el número de cada bloque lo agrega a tu programa! Con la C conectás el robot. Con la V cambiás la velocidad de la voz, y con la T los colores de la pantalla.',
   INICIO:                   'Categoría Inicio. Presioná el 1 para poner el bloque Al empezar. ¡Acá comienza tu programa!',
   MOVIMIENTO:               'Categoría Movimiento. Presioná 1 para Avanzar, 2 para girar a la Izquierda, 3 para girar a la Derecha.',
   ACCIONES:                 'Categoría Acciones. Presioná el 1 para que el robot Espere un momento.',
@@ -32,80 +40,104 @@ export const NARRATIVA = {
   LEERESPERAR:              'Esperar.',
 };
 
+// ── Estado de voz compartido por toda la app ─────────────────────────────────
+// Vive a nivel de módulo (no dentro del hook) para que la velocidad elegida,
+// la voz y el último mensaje sean los mismos en todos los componentes que
+// usan useAudio(). Si estuvieran en un useRef, cada componente tendría su copia.
+export const VELOCIDAD_INICIAL = 0.78;
+
+const estadoVoz = {
+  velocidad:     VELOCIDAD_INICIAL,
+  voz:           null,
+  ultimoMensaje: '',
+  generacion:    0, // aumenta en cada mensaje nuevo; corta las frases pendientes del anterior
+};
+
+const hayVoz = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+const elegirVoz = () => {
+  const voces = window.speechSynthesis.getVoices();
+
+  const preferidas = [
+    'Paulina',
+    'Monica',
+    'Google español',
+    'Google español de Estados Unidos',
+    'Microsoft Sabina',
+    'Microsoft Helena',
+    'Microsoft Laura',
+    'Mónica',
+    'Jorge',
+  ];
+
+  estadoVoz.voz =
+    preferidas.reduce((encontrada, nombre) =>
+      encontrada || voces.find(v => v.name.includes(nombre)) || null
+    , null) ||
+    voces.find(v => v.lang === 'es-AR') ||
+    voces.find(v => v.lang === 'es-MX') ||
+    voces.find(v => v.lang === 'es-ES') ||
+    voces.find(v => v.lang.startsWith('es')) ||
+    voces[0] ||
+    null;
+};
+
+if (hayVoz()) {
+  elegirVoz();
+  window.speechSynthesis.addEventListener('voiceschanged', elegirVoz);
+}
+
+const _speak = (texto, onEnd) => {
+  if (!texto || !hayVoz()) { onEnd?.(); return; }
+
+  const textoLimpio = texto
+    .replace(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]/gu, '')
+    .replace(/¡/g, '')
+    .replace(/!/g, '.')
+    .replace(/¿/g, '')
+    .trim();
+
+  const partes = textoLimpio.split(/(?<=[.?])\s+/).filter(Boolean);
+
+  const generacion = ++estadoVoz.generacion;
+  window.speechSynthesis.cancel();
+  estadoVoz.ultimoMensaje = textoLimpio;
+
+  let terminado = false;
+  const terminar = () => {
+    if (terminado) return;
+    terminado = true;
+    onEnd?.();
+  };
+
+  let i = 0;
+  const siguiente = () => {
+    // Si empezó otro mensaje, no seguir con las frases de este
+    if (generacion !== estadoVoz.generacion || i >= partes.length) { terminar(); return; }
+    const u = new SpeechSynthesisUtterance(partes[i++]);
+    u.lang  = 'es-AR';
+    u.rate  = estadoVoz.velocidad;
+    u.pitch = 1.1;
+    if (estadoVoz.voz) u.voice = estadoVoz.voz;
+    u.onend   = siguiente;
+    u.onerror = siguiente;
+    window.speechSynthesis.speak(u);
+  };
+  siguiente();
+};
+
 export function useAudio() {
-  const ultimoMensajeRef = useRef('');
-  const velocidadRef     = useRef(0.78);
-  const vozRef           = useRef(null);
-
-  useEffect(() => {
-    const elegirVoz = () => {
-      const voces = window.speechSynthesis.getVoices();
-
-      const preferidas = [
-        'Paulina',
-        'Monica',
-        'Google español',
-        'Google español de Estados Unidos',
-        'Microsoft Sabina',
-        'Microsoft Helena',
-        'Microsoft Laura',
-        'Mónica',
-        'Jorge',
-      ];
-
-      vozRef.current =
-        preferidas.reduce((encontrada, nombre) =>
-          encontrada || voces.find(v => v.name.includes(nombre)) || null
-        , null) ||
-        voces.find(v => v.lang === 'es-AR') ||
-        voces.find(v => v.lang === 'es-MX') ||
-        voces.find(v => v.lang === 'es-ES') ||
-        voces.find(v => v.lang.startsWith('es')) ||
-        voces[0] ||
-        null;
-    };
-
-    elegirVoz();
-    window.speechSynthesis.addEventListener('voiceschanged', elegirVoz);
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', elegirVoz);
-  }, []);
-
-  const _speak = useCallback((texto, onEnd) => {
-    if (!texto) { onEnd?.(); return; }
-
-    const textoLimpio = texto
-      .replace(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]/gu, '')
-      .replace(/¡/g, '')
-      .replace(/!/g, '.')
-      .replace(/¿/g, '')
-      .trim();
-
-    const partes = textoLimpio.split(/(?<=[.?])\s+/).filter(Boolean);
-
+  const hablar          = useCallback((texto) => { _speak(texto, null); }, []);
+  const hablarYEsperar  = useCallback((texto) => new Promise(r => _speak(texto, r)), []);
+  const pararAudio      = useCallback(() => {
+    if (!hayVoz()) return;
+    estadoVoz.generacion++;
     window.speechSynthesis.cancel();
-    ultimoMensajeRef.current = textoLimpio;
-
-    let i = 0;
-    const siguiente = () => {
-      if (i >= partes.length) { onEnd?.(); return; }
-      const u = new SpeechSynthesisUtterance(partes[i++]);
-      u.lang  = 'es-AR';
-      u.rate  = velocidadRef.current;
-      u.pitch = 1.1;
-      if (vozRef.current) u.voice = vozRef.current;
-      u.onend   = siguiente;
-      u.onerror = siguiente;
-      window.speechSynthesis.speak(u);
-    };
-    siguiente();
   }, []);
-
-  const hablar          = useCallback((texto) => { _speak(texto, null); }, [_speak]);
-  const hablarYEsperar  = useCallback((texto) => new Promise(r => _speak(texto, r)), [_speak]);
-  const pararAudio      = useCallback(() => { window.speechSynthesis.cancel(); }, []);
-  const repetirUltimo   = useCallback(() => { if (ultimoMensajeRef.current) _speak(ultimoMensajeRef.current, null); }, [_speak]);
-  const setVelocidad    = useCallback((rate) => { velocidadRef.current = Math.max(0.5, Math.min(1.5, rate)); }, []);
+  const repetirUltimo   = useCallback(() => { if (estadoVoz.ultimoMensaje) _speak(estadoVoz.ultimoMensaje, null); }, []);
+  const setVelocidad    = useCallback((rate) => { estadoVoz.velocidad = Math.max(0.5, Math.min(1.5, rate)); }, []);
   const desbloquearAudio = useCallback(() => {
+    if (!hayVoz()) return;
     const s = new SpeechSynthesisUtterance(' ');
     s.volume = 0;
     window.speechSynthesis.speak(s);

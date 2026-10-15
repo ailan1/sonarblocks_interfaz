@@ -1,37 +1,40 @@
 import { useState, useCallback } from 'react';
 import { obtenerBloque } from '../datos/bloquesData';
-import { useAudio } from './useAudio';
+import { useAudio, NARRATIVA } from './useAudio';
+
+// Tiempo que dura cada bloque al ejecutar (robot y simulador usan el mismo)
+export const DURACION_BLOQUE = 2000;
+
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const NARRATIVA_AGREGAR = {
+  'Al empezar': NARRATIVA.BLOQUEINICIO,
+  'Avanzar':    NARRATIVA.AVANZAR,
+  'Izquierda':  NARRATIVA.IZQUIERDA,
+  'Derecha':    NARRATIVA.DERECHA,
+  'Esperar':    NARRATIVA.ESPERAR,
+};
+
+const NARRATIVA_EJECUTAR = {
+  'Avanzar':   NARRATIVA.AVANZANDO,
+  'Izquierda': NARRATIVA.GIRARIZQUIERDA,
+  'Derecha':   NARRATIVA.GIRARDERECHA,
+  'Esperar':   NARRATIVA.ESPERAR,
+};
+
+const NARRATIVA_LEER = {
+  'Avanzar':   NARRATIVA.LEERAVANZAR,
+  'Izquierda': NARRATIVA.LEERIZQUIERDA,
+  'Derecha':   NARRATIVA.LEERDERECHA,
+  'Esperar':   NARRATIVA.LEERESPERAR,
+};
 
 export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = {}) {
   const [bloques, setBloques]           = useState([]);
   const [ejecutando, setEjecutando]     = useState(false);
-  const [bloqueActual, setBloqueActual] = useState(null); // ← qué bloque está ejecutando ahora
+  const [indiceActual, setIndiceActual] = useState(null); // ← posición del bloque que se está ejecutando
 
   const { hablar, hablarYEsperar, narrativa } = useAudio();
-
-  const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
-
-  const NARRATIVA_AGREGAR = {
-    'Al empezar': narrativa.BLOQUEINICIO,
-    'Avanzar':    narrativa.AVANZAR,
-    'Izquierda':  narrativa.IZQUIERDA,
-    'Derecha':    narrativa.DERECHA,
-    'Esperar':    narrativa.ESPERAR,
-  };
-
-  const NARRATIVA_EJECUTAR = {
-    'Avanzar':   narrativa.AVANZANDO,
-    'Izquierda': narrativa.GIRARIZQUIERDA,
-    'Derecha':   narrativa.GIRARDERECHA,
-    'Esperar':   narrativa.ESPERAR,
-  };
-
-  const NARRATIVA_LEER = {
-    'Avanzar':   narrativa.LEERAVANZAR,
-    'Izquierda': narrativa.LEERIZQUIERDA,
-    'Derecha':   narrativa.LEERDERECHA,
-    'Esperar':   narrativa.LEERESPERAR,
-  };
 
   const agregarBloque = useCallback((nombreBloque) => {
     if (nombreBloque === 'Al empezar' && bloques.includes('Al empezar')) {
@@ -59,24 +62,11 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
     }
     setBloques((prev) => prev.slice(0, -1));
     hablar(narrativa.ELIMINARULTIMOBLOQUE);
-    await esperar(2000);
   }, [bloques, hablar, narrativa]);
 
   const limpiarBloques = useCallback(() => {
     setBloques([]);
   }, []);
-
-  const _iterarBloques = async (mapaAudio) => {
-    for (let i = 1; i < bloques.length; i++) {
-      const bloque = bloques[i];
-      if (bloque.startsWith('Decir:')) continue;
-      const bloqueData = obtenerBloque(tipoProgramacion, bloque);
-      if (!bloqueData) continue;
-      const mensajeAudio = mapaAudio[bloqueData.nombre];
-      if (mensajeAudio) await hablarYEsperar(mensajeAudio);
-      await esperar(2000);
-    }
-  };
 
   const ejecutarPrograma = useCallback(async () => {
     if (ejecutando)                  { hablar('El programa ya se está ejecutando');          return; }
@@ -84,18 +74,20 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
     if (bloques.length === 1)        { hablar('Tu programa está vacío. Agrega más bloques'); return; }
 
     setEjecutando(true);
-    setBloqueActual(null);
-
-    if (!estaConectado) hablar(narrativa.DESCONECTADO);
+    setIndiceActual(null);
 
     try {
+      // Se espera a que termine el aviso; si no, el primer bloque lo cortaría
+      if (!estaConectado) await hablarYEsperar(narrativa.SINROBOT);
+
       for (let i = 1; i < bloques.length; i++) {
         const bloque = bloques[i];
         if (bloque.startsWith('Decir:')) continue;
         const bloqueData = obtenerBloque(tipoProgramacion, bloque);
         if (!bloqueData) continue;
 
-        setBloqueActual(bloqueData.nombre);
+        // El simulador reacciona a este cambio al mismo tiempo que el robot físico
+        setIndiceActual(i);
 
         // Hablar en paralelo — no bloquea el loop
         const mensajeAudio = NARRATIVA_EJECUTAR[bloqueData.nombre];
@@ -105,7 +97,7 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
         if (estaConectado && enviarComando) await enviarComando(bloqueData.codigo);
 
         // Esperar tiempo fijo por bloque para que el simulador y el robot tengan tiempo de actuar
-        await esperar(2000);
+        await esperar(DURACION_BLOQUE);
       }
       hablar(narrativa.FINPROGRAMACION);
     } catch (err) {
@@ -113,21 +105,29 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
       hablar('Ha ocurrido un error');
     } finally {
       setEjecutando(false);
-      setBloqueActual(null);
+      setIndiceActual(null);
     }
-  }, [ejecutando, bloques, tipoProgramacion, estaConectado, enviarComando, hablar, narrativa]);
+  }, [ejecutando, bloques, tipoProgramacion, estaConectado, enviarComando, hablar, hablarYEsperar, narrativa]);
 
   const leerPrograma = useCallback(async () => {
     if (bloques.length === 0) { hablar('El programa está vacío'); return; }
     await hablarYEsperar(narrativa.REVISARCODIGO);
     await esperar(1000);
-    await _iterarBloques(NARRATIVA_LEER);
+    for (let i = 1; i < bloques.length; i++) {
+      const bloque = bloques[i];
+      if (bloque.startsWith('Decir:')) continue;
+      const bloqueData = obtenerBloque(tipoProgramacion, bloque);
+      if (!bloqueData) continue;
+      const mensajeAudio = NARRATIVA_LEER[bloqueData.nombre];
+      if (mensajeAudio) await hablarYEsperar(mensajeAudio);
+      await esperar(2000);
+    }
   }, [bloques, tipoProgramacion, hablar, hablarYEsperar, narrativa]);
 
   return {
     bloques,
     ejecutando,
-    bloqueActual,
+    indiceActual,
     agregarBloque,
     eliminarUltimoBloque,
     limpiarBloques,
