@@ -36,6 +36,31 @@ const PASOS = [
     audioError: '¡Esa no es! Apretá la tecla Enter.',
     audioExito: '¡Muy bien! Esa es la tecla Enter.',
   },
+  // Pasos de ajuste: la tecla se puede apretar varias veces y Enter sigue
+  {
+    tipo: 'ajuste',
+    icono: '🔊',
+    titulo: 'Velocidad de la voz',
+    descripcion: 'Con la tecla V cambiás la velocidad de la voz: lenta, estándar o rápida. Apretala hasta que te guste, y después ENTER para seguir.',
+    audio: 'Con la tecla V cambiás la velocidad de mi voz. Puede ser lenta, estándar o rápida. Apretá V hasta que te guste cómo hablo, y después apretá Enter para seguir.',
+    instruccion: 'Apretá V para cambiar · ENTER para seguir',
+    teclaAjuste: 'v',
+    teclaLabel: 'V',
+    ajuste: 'velocidad',
+    audioError: 'Apretá V para cambiar la velocidad, o Enter para seguir.',
+  },
+  {
+    tipo: 'ajuste',
+    icono: '🌓',
+    titulo: 'Colores de la pantalla',
+    descripcion: 'Con la tecla T cambiás los colores: estándar o alto contraste. Apretala hasta que veas mejor, y después ENTER para seguir.',
+    audio: 'Con la tecla T cambiás los colores de la pantalla. Hay colores estándar, y colores de alto contraste que se ven más fuertes. Apretá T hasta que veas mejor, y después apretá Enter para seguir.',
+    instruccion: 'Apretá T para cambiar · ENTER para seguir',
+    teclaAjuste: 't',
+    teclaLabel: 'T',
+    ajuste: 'tema',
+    audioError: 'Apretá T para cambiar los colores, o Enter para seguir.',
+  },
   {
     tipo: 'info',
     icono: '🧩',
@@ -201,7 +226,17 @@ const PASOS = [
   },
 ];
 
-const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicrobit, estaConectado }) => {
+const Onboarding = ({
+  onTerminar,
+  onAgregarBloque,
+  limpiarBloques,
+  conectarMicrobit,
+  estaConectado,
+  etiquetaVelocidad,
+  onCambiarVelocidad,
+  etiquetaTema,
+  onCambiarTema,
+}) => {
   const { hablarYEsperar, pararAudio, desbloquearAudio } = useAudio();
 
   const [fase, setFase]                     = useState('bienvenida');
@@ -276,6 +311,8 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
 
   const manejarTeclado = useCallback((e) => {
     if (faseRef.current === 'bienvenida') {
+      // Evita que Enter/Espacio también "clickeen" el botón Comenzar y arranque dos veces
+      e.preventDefault();
       handleComenzar();
       return;
     }
@@ -293,6 +330,26 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
       return;
     }
 
+    // ── Ajuste: la tecla cambia el valor (las veces que quiera), Enter sigue ──
+    if (paso.tipo === 'ajuste') {
+      if (e.key === 'Enter') { avanzarPaso(); return; }
+      if (e.key.toLowerCase() === paso.teclaAjuste) {
+        setEstado('exito');
+        if (paso.ajuste === 'velocidad') onCambiarVelocidad?.();
+        if (paso.ajuste === 'tema')      onCambiarTema?.();
+        return;
+      }
+      bloqueadoRef.current = true;
+      setEstado('error');
+      hablarYEsperar(paso.audioError).then(() => {
+        if (faseRef.current === 'tutorial') {
+          setEstado('esperando');
+          bloqueadoRef.current = false;
+        }
+      });
+      return;
+    }
+
     // ── Cualquier tecla avanza ──
     if (paso.tipo === 'cualquier-tecla') {
       avanzarPaso();
@@ -301,12 +358,20 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
 
     // ── Conectar ──
     if (paso.tipo === 'conectar') {
+      // Ya estaba conectado (p. ej. lo conectaron antes): no abrir la ventana, seguir
+      if (e.key.toLowerCase() === 'c' && estaConectado) {
+        setEstadoConectar('conectado');
+        bloqueadoRef.current = true;
+        hablarYEsperar('¡El robot ya está conectado! Muy bien.').then(() => avanzarPaso());
+        return;
+      }
       if (e.key.toLowerCase() === 'c' && estadoConectar === 'esperando') {
         setEstadoConectar('conectando');
         bloqueadoRef.current = true;
         hablarYEsperar('Abriendo ventana de conexión. Usá Tab para moverte, flecha abajo para bajar en la lista, y Enter para conectar.')
           .then(() => { bloqueadoRef.current = false; });
-        conectarMicrobit();
+        // anunciar: false porque el tutorial ya explicó la ventana
+        conectarMicrobit({ anunciar: false });
       }
       if (e.key === 'Tab' && estadoConectar !== 'conectado') {
         bloqueadoRef.current = true;
@@ -338,7 +403,7 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
         }
       });
     }
-  }, [handleComenzar, avanzarPaso, hablarYEsperar, pararAudio, onAgregarBloque, conectarMicrobit, estadoConectar]);
+  }, [handleComenzar, avanzarPaso, hablarYEsperar, onAgregarBloque, conectarMicrobit, estadoConectar, estaConectado, onCambiarVelocidad, onCambiarTema]);
 
   useEffect(() => {
     window.addEventListener('keydown', manejarTeclado);
@@ -439,6 +504,20 @@ const Onboarding = ({ onTerminar, onAgregarBloque, limpiarBloques, conectarMicro
                 {estadoConectar === 'esperando'  && '👆 Apretá C para conectar o TAB para saltear'}
                 {estadoConectar === 'conectando' && '⏳ Esperando conexión...'}
                 {estadoConectar === 'conectado'  && '✅ ¡Robot conectado!'}
+              </p>
+            </div>
+          )}
+
+          {paso.tipo === 'ajuste' && (
+            <div className={`onboarding-zona-tecla estado-${estado}`} aria-live="polite">
+              <div className={`onboarding-tecla-visual tecla-${estado === 'error' ? 'error' : 'espera'}`}>
+                <span className="onboarding-tecla-label">{paso.teclaLabel}</span>
+              </div>
+              <p className="onboarding-ajuste-valor">
+                Ahora: <strong>{paso.ajuste === 'velocidad' ? etiquetaVelocidad : etiquetaTema}</strong>
+              </p>
+              <p className={`onboarding-feedback feedback-${estado === 'error' ? 'error' : 'esperando'}`}>
+                {estado === 'error' ? `❌ ${paso.audioError}` : `👆 ${paso.instruccion}`}
               </p>
             </div>
           )}

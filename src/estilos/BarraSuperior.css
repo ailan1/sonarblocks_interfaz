@@ -1,40 +1,33 @@
-/* Contenedor principal de la barra */
+/* Contenedor principal de la barra (fondo oscuro: el logo CYT es blanco) */
 .barra-superior {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #ffffff;
-  padding: 16px 32px;
-  border-bottom: 1px solid #E5E7EB;
+  background-color: var(--barra-fondo);
+  color: var(--barra-texto);
+  padding: 8px 20px;
+  flex-shrink: 0;
+  border-bottom: 3px solid var(--barra-borde);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   width: 100%;
-  box-sizing: border-box; 
+  box-sizing: border-box;
   gap: 16px;
 }
-
 
 .logo-aplicacion {
   display: flex;
   align-items: center;
   gap: 20px;
-  
-  flex: 1; 
-  min-width: 0; 
+  flex: 1;
+  min-width: 0;
+  overflow: hidden; /* el logo se achica, nunca se pisa con los botones */
 }
 
 .titulo-app {
   font-size: 1.5rem;
   font-weight: 800;
-  color: w; 
+  color: var(--barra-texto);
   white-space: nowrap; /* Evita que el texto se parta */
-}
-
-.logo-makecode {
-  height: 32px;
-  width: auto;
-  max-width: 150px; /* Límite máximo */
-  object-fit: contain;
-  filter: invert(1) opacity(0.8); 
-  flex-shrink: 1; /* Permite que el logo se achique si la pantalla es chica */
 }
 
 .logo-cyt {
@@ -45,25 +38,67 @@
   flex-shrink: 1;
 }
 
+.controles-barra {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
 
-/* Estilos del Botón de Conectar */
-.btn-conectar {
+/* Grupos de la barra (Ajustes y Robot): se marcan cuando son la sección activa de Tab */
+.grupo-barra {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+  border: 3px solid transparent;
+  border-radius: 12px;
+}
+
+.grupo-barra.seccion-activa {
+  border-color: var(--barra-texto);
+  box-shadow: 0 0 0 3px var(--foco-halo);
+}
+
+/* Indicador de sección activa — ayuda visual para usuarios videntes */
+.indicador-seccion {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--barra-texto);
+  border: 2px solid var(--barra-texto);
+  border-radius: 8px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+/* Botones de la barra: velocidad, contraste y conectar */
+.btn-barra {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #0033CC; 
-  color: #ffffff;
-  border: none;
-  padding: 10px 24px;
+  background-color: var(--btn-claro-fondo);
+  color: var(--btn-claro-texto);
+  border: 2px solid var(--btn-claro-texto);
+  padding: 6px 16px;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease;
   white-space: nowrap; /* Evita que el texto del botón se deforme */
+  font-weight: 700;
+}
+
+.btn-barra:hover {
+  transform: translateY(-2px);
+}
+
+.btn-barra:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  border-style: dashed;
 }
 
 .btn-texto {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -71,8 +106,16 @@
 }
 
 .btn-atajo {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #E0E7FF; 
   margin-top: 2px;
+}
+
+/* Pantallas angostas: el indicador de sección no entra junto al logo.
+   La sección activa igual se ve por el borde grueso que la rodea. */
+@media (max-width: 1200px) {
+  .indicador-seccion { display: none; }
+  .barra-superior    { padding: 8px 12px; gap: 10px; }
+  .controles-barra   { gap: 6px; }
+  .btn-barra         { padding: 6px 10px; }
 }

@@ -10,11 +10,13 @@ import Onboarding from './componentes/Onboarding';
 
 import { useBloques } from './hooks/useBloques';
 import { useTeclado } from './hooks/useTeclado';
-import { useAudio } from './hooks/useAudio';
 import { useMicrobit } from './hooks/useMicrobit';
+import { useTema } from './hooks/useTema';
+import { useVelocidad } from './hooks/useVelocidad';
 
 import RobotSimulador from './componentes/RobotSimulador';
 import { obtenerBloquesPorModo, obtenerTeclasRapidas } from './datos/bloquesData';
+import './estilos/Temas.css';
 import './estilos/App.css';
 
 function App() {
@@ -30,6 +32,9 @@ function App() {
     estaConectado,
   } = useMicrobit();
 
+  const { etiqueta: etiquetaTema, cambiarTema } = useTema();
+  const { etiqueta: etiquetaVelocidad, cambiarVelocidad } = useVelocidad();
+
   const datosModoActual       = obtenerBloquesPorModo(tipoProgramacion);
   const teclasRapidasActuales = obtenerTeclasRapidas(tipoProgramacion);
 
@@ -37,6 +42,7 @@ function App() {
   const {
     bloques,
     ejecutando,
+    indiceActual,
     agregarBloque,
     eliminarUltimoBloque,
     ejecutarPrograma,
@@ -55,6 +61,9 @@ function App() {
     onEjecutar: ejecutarPrograma,
     onLeerPrograma: leerPrograma,
     onConectar: conectarMicrobit,
+    onCambiarTema: cambiarTema,
+    onCambiarVelocidad: cambiarVelocidad,
+    estaConectado,
   });
 
   return (
@@ -66,6 +75,10 @@ function App() {
           limpiarBloques={limpiarBloques}
           conectarMicrobit={conectarMicrobit}
           estaConectado={estaConectado}
+          etiquetaVelocidad={etiquetaVelocidad}
+          onCambiarVelocidad={cambiarVelocidad}
+          etiquetaTema={etiquetaTema}
+          onCambiarTema={cambiarTema}
         />
       )}
       <DndProvider backend={HTML5Backend}>
@@ -73,9 +86,14 @@ function App() {
           tipoProgramacion={datosModoActual.nombre}
           onConectar={conectarMicrobit}
           estadoConexion={estadoConexion}
+          estaConectado={estaConectado}
           ejecutando={ejecutando}
           modoNavegacion={modoNavegacion}
           seccionActiva={seccionActiva}
+          etiquetaTema={etiquetaTema}
+          onCambiarTema={cambiarTema}
+          etiquetaVelocidad={etiquetaVelocidad}
+          onCambiarVelocidad={cambiarVelocidad}
         />
 
         <div className="contenido-principal">
@@ -86,6 +104,7 @@ function App() {
             deshabilitado={ejecutando}
             categoriaSeleccionada={categoriaSeleccionada}
             modoNavegacion={modoNavegacion}
+            activa={seccionActiva === 'categorias'}
           />
 
           <div className="area-programacion">
@@ -94,6 +113,7 @@ function App() {
               onAgregarBloque={agregarBloque}
               modo={tipoProgramacion}
               ejecutando={ejecutando}
+              activa={seccionActiva === 'area-trabajo'}
             />
 
             <ControlesPrograma
@@ -102,12 +122,14 @@ function App() {
               onEliminarUltimo={eliminarUltimoBloque}
               onLeerPrograma={leerPrograma}
               ejecutando={ejecutando}
+              activa={seccionActiva === 'ejecucion'}
             />
           </div>
 
           <RobotSimulador
             bloques={bloques}
             ejecutando={ejecutando}
+            indiceActual={indiceActual}
           />
         </div>
       </DndProvider>

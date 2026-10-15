@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 const TAMANO_ARENA = 300;
 const PASO_MOVIMIENTO = 60;
-const DURACION_PASO = 2800; // ms, más lento
+const CENTRO = TAMANO_ARENA / 2;
 
 const ROTACION = { norte: -90, sur: 90, este: 0, oeste: 180 };
 const DELTA = {
@@ -21,6 +21,40 @@ const LABELS = {
 };
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+// Recorre el programa hasta el bloque que se está ejecutando y devuelve
+// dónde está el robot, hacia dónde mira y el rastro que dejó.
+// El robot arranca en el centro mirando al este.
+const calcularEstado = (bloques, indiceActual) => {
+  let pos = { x: CENTRO, y: CENTRO };
+  let dir = 'este';
+  const rastro = [];
+
+  if (indiceActual === null) return { pos, dir, rastro };
+
+  for (let i = 0; i <= indiceActual && i < bloques.length; i++) {
+    switch (bloques[i]) {
+      case 'Avanzar': {
+        const nueva = {
+          x: clamp(pos.x + DELTA[dir].x, 20, TAMANO_ARENA - 20),
+          y: clamp(pos.y + DELTA[dir].y, 20, TAMANO_ARENA - 20),
+        };
+        rastro.push({ x1: pos.x, y1: pos.y, x2: nueva.x, y2: nueva.y });
+        pos = nueva;
+        break;
+      }
+      case 'Izquierda':
+        dir = GIRO_IZQ[dir];
+        break;
+      case 'Derecha':
+        dir = GIRO_DER[dir];
+        break;
+      default:
+        break;
+    }
+  }
+  return { pos, dir, rastro };
+};
 
 const RobotSVG = ({ esperando }) => (
   <g>
@@ -58,102 +92,20 @@ const RobotSVG = ({ esperando }) => (
   </g>
 );
 
-const EstadoActual = ({ ejecutando, bloques, ejecutandoIdx }) => {
+const EstadoActual = ({ ejecutando, bloques, indiceActual }) => {
   if (!ejecutando) return '— En espera —';
-  if (ejecutandoIdx === null) return '';
-  return LABELS[bloques[ejecutandoIdx]] || '';
+  if (indiceActual === null) return '';
+  return LABELS[bloques[indiceActual]] || '';
 };
 
-const RobotSimulador = ({ bloques, ejecutando }) => {
-  const centro = TAMANO_ARENA / 2;
-
-  const [pos, setPos] = useState({ x: centro, y: centro });
-const [dir, setDir] = useState('este'); // inicia mirando oeste
-         // referencia interna
-  const [esperando, setEsperando] = useState(false);
-  const [rastro, setRastro] = useState([]);
-  const [ejecutandoIdx, setEjecutandoIdx] = useState(null);
-
-  const posRef = useRef({ x: centro, y: centro });
-  const dirRef = useRef('este'); 
-
-  // Resetear cuando no ejecuta
-  useEffect(() => {
-    if (!ejecutando) {
-      setPos({ x: centro, y: centro });
-      setDir('este'); // inicia mirando oeste
-      setEsperando(false);
-      setRastro([]);
-      setEjecutandoIdx(null);
-      posRef.current = { x: centro, y: centro };
-      dirRef.current = 'este';
-    }
-  }, [ejecutando]);
-
-  // Animación
-  useEffect(() => {
-    if (!ejecutando || bloques.length === 0) return;
-    let cancelado = false;
-
-    const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
-
-    const animar = async () => {
-      posRef.current = { x: centro, y: centro };
-      dirRef.current = 'este';
-      setPos({ x: centro, y: centro });
-      setDir('este');
-      setRastro([]);
-      setEsperando(false);
-      const gradosADELTA = (rot) => {
-  // Convertir rotación a radianes
-  const rad = (rot * Math.PI) / 180;
-  return { x: Math.cos(rad) * PASO_MOVIMIENTO, y: Math.sin(rad) * PASO_MOVIMIENTO };
-};
-
-      for (let i = 0; i < bloques.length; i++) {
-        if (cancelado) return;
-        const bloque = bloques[i];
-        if (bloque === 'Al empezar') continue;
-
-        setEjecutandoIdx(i);
-        await esperar(500);
-
-        switch (bloque) {
-          case 'Avanzar': {
-  const delta = gradosADELTA(ROTACION[dirRef.current]); // usar rotación actual
-  const nuevaX = clamp(posRef.current.x + delta.x, 20, TAMANO_ARENA - 20);
-  const nuevaY = clamp(posRef.current.y + delta.y, 20, TAMANO_ARENA - 20);
-  setRastro(prev => [...prev, { x1: posRef.current.x, y1: posRef.current.y, x2: nuevaX, y2: nuevaY }]);
-  posRef.current = { x: nuevaX, y: nuevaY };
-  setPos({ x: nuevaX, y: nuevaY });
-  await esperar(DURACION_PASO);
-  break;
-}
-          case 'Izquierda':
-            dirRef.current = GIRO_IZQ[dirRef.current];
-            setDir(dirRef.current);
-            await esperar(DURACION_PASO);
-            break;
-          case 'Derecha':
-            dirRef.current = GIRO_DER[dirRef.current];
-            setDir(dirRef.current);
-            await esperar(DURACION_PASO);
-            break;
-          case 'Esperar':
-            setEsperando(true);
-            await esperar(DURACION_PASO);
-            setEsperando(false);
-            break;
-        }
-      }
-      setEjecutandoIdx(null);
-    };
-
-    animar();
-    return () => {
-      cancelado = true;
-    };
-  }, [ejecutando, bloques]);
+// El simulador no tiene reloj propio: sigue a `indiceActual`, que lo marca
+// useBloques al mismo tiempo que le envía el comando al robot físico.
+const RobotSimulador = ({ bloques, ejecutando, indiceActual }) => {
+  const { pos, dir, rastro } = useMemo(
+    () => calcularEstado(bloques, ejecutando ? indiceActual : null),
+    [bloques, ejecutando, indiceActual]
+  );
+  const esperando = ejecutando && bloques[indiceActual] === 'Esperar';
 
   const rotacion = ROTACION[dir];
 
@@ -172,49 +124,28 @@ const [dir, setDir] = useState('este'); // inicia mirando oeste
   }, []);
 
   return (
-    <div
-      style={{
-        background: 'var(--color-background-secondary)',
-        borderRadius: 16,
-        padding: 16,
-        border: '1px solid var(--color-border-tertiary)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 10,
-        minWidth: TAMANO_ARENA + 32,
-      }}
-    >
-      <span
-        style={{
-          fontSize: 13,
-          fontWeight: 500,
-          color: 'var(--color-text-secondary)',
-          letterSpacing: '0.03em',
-        }}
-      >
-        Vista del robot
-      </span>
+    <div className="simulador">
+      <span className="simulador-titulo">Vista del robot</span>
 
       <svg
-        width={TAMANO_ARENA}
-        height={TAMANO_ARENA}
-        style={{ borderRadius: 12, background: '#e8f4ff', display: 'block' }}
+        className="simulador-arena"
+        viewBox={`0 0 ${TAMANO_ARENA} ${TAMANO_ARENA}`}
+        role="img"
         aria-label="Simulador del robot"
       >
         {/* Suelo con puntos */}
         {puntosSuelo.map((p) => (
-          <circle key={p.key} cx={p.cx} cy={p.cy} r={2} fill="rgba(100,150,220,0.25)" />
+          <circle key={p.key} cx={p.cx} cy={p.cy} r={2.5} style={{ fill: 'var(--puntos-arena)' }} />
         ))}
 
         {/* Punto de inicio */}
         <circle
-          cx={centro}
-          cy={centro}
+          cx={CENTRO}
+          cy={CENTRO}
           r={6}
-          fill="rgba(76,151,255,0.2)"
-          stroke="#4C97FF"
-          strokeWidth={1.5}
+          fill="none"
+          style={{ stroke: 'var(--rastro)' }}
+          strokeWidth={2}
           strokeDasharray="3 2"
         />
 
@@ -226,9 +157,8 @@ const [dir, setDir] = useState('este'); // inicia mirando oeste
             y1={seg.y1}
             x2={seg.x2}
             y2={seg.y2}
-            stroke="#4C97FF"
-            strokeWidth={2.5}
-            strokeOpacity={0.35}
+            style={{ stroke: 'var(--rastro)' }}
+            strokeWidth={4}
             strokeLinecap="round"
           />
         ))}
@@ -243,8 +173,8 @@ const [dir, setDir] = useState('este'); // inicia mirando oeste
       </svg>
 
       {/* Estado actual */}
-      <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', height: 18 }}>
-        <EstadoActual ejecutando={ejecutando} bloques={bloques} ejecutandoIdx={ejecutandoIdx} />
+      <div className="simulador-estado">
+        <EstadoActual ejecutando={ejecutando} bloques={bloques} indiceActual={indiceActual} />
       </div>
     </div>
   );
