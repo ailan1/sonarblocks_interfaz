@@ -104,6 +104,40 @@ button {
   font-weight: 600;
 }
 
+/* Nombre de la categoría: es un botón para abrirla con el mouse */
+.categoria-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.categoria-flecha {
+  flex-shrink: 0;
+}
+
+.categoria-nombre {
+  flex-shrink: 0;
+}
+
+.categoria-iconos {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--texto-suave);
+}
+
+.categoria-bloques:not(.categoria-seleccionada) h3 {
+  margin-bottom: 0;
+}
+
 .texto-seleccionado {
   font-weight: bold;
   text-decoration: underline;
@@ -137,10 +171,16 @@ button {
 }
 
 .bloque-icono {
-  font-size: 1.4rem;
-  line-height: 1;
-  width: 1.6rem;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Los íconos se alinean con el texto que los acompaña */
+.icono {
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .bloque-texto {
@@ -217,6 +257,87 @@ button {
   --fondo-contenedor: var(--fondo-area-soltar);
   background: var(--fondo-area-soltar);
   border-color: var(--acento);
+}
+
+/* ── Bloques del programa ────────────────────────────────────────────────── */
+.fila-bloque {
+  position: relative;
+}
+
+/* Dentro de una repetición: corrido a la derecha y con una barra al costado */
+.fila-dentro-repetir {
+  margin-left: 36px;
+}
+
+.fila-dentro-repetir::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: -8px;
+  bottom: 0;
+  width: 6px;
+  border-radius: 3px;
+  background: #56B4E9;
+}
+
+/* El bloque que se está ejecutando ahora */
+.fila-ejecutando .bloque {
+  outline: 4px solid var(--acento);
+  outline-offset: 3px;
+}
+
+.marca-ejecutando {
+  position: absolute;
+  left: min(100%, 292px);
+  top: 50%;
+  transform: translateY(-65%);
+  margin-left: 10px;
+  color: var(--acento);
+}
+
+/* Panel para elegir cuántas veces repetir (con el mouse) */
+.panel-veces {
+  margin-top: 8px;
+  padding: 12px;
+  border: 3px solid #56B4E9;
+  border-radius: 12px;
+  background: var(--superficie);
+  max-width: 420px;
+}
+
+.panel-veces-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.panel-veces-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.btn-veces {
+  min-width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 8px;
+  border: 2px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-veces:hover {
+  border-color: var(--acento);
+}
+
+.btn-veces-cancelar {
+  padding: 0 12px;
+  font-size: 0.95rem;
 }
 
 .mensaje-vacio {
@@ -319,6 +440,30 @@ button {
   font-weight: 600;
   color: var(--texto-suave);
   min-height: 1.4rem;
+  text-align: center;
+}
+
+/* Pantalla de luces 5×5 de la micro:bit */
+.pantalla-luces {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #1A1A1A;
+  border: 2px solid var(--borde);
+  width: 130px;
+}
+
+.luz {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: #3A3A3A;
+}
+
+.luz-prendida {
+  background: #FF3B30;
+  box-shadow: 0 0 6px #FF3B30;
 }
 
 /* Pantallas bajas (netbooks 1366×768, 1280×720): todo un poco más compacto */
@@ -384,4 +529,22 @@ button {
 .area-trabajo::-webkit-scrollbar-thumb {
   background: var(--borde);
   border-radius: 4px;
+}
+
+/* Ícono de "Ejecutando...": gira despacio (se detiene con "reducir movimiento") */
+.icono-girando {
+  animation: girar 1.4s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+/* Botones con ícono y texto alineados */
+.btn-control,
+.btn-texto {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import CYT from '../CYT.png';
 import ControlVelocidad from './ControlVelocidad';
 import ControlContraste from './ControlContraste';
+import Icono from './Icono';
 import '../estilos/BarraSuperior.css';
 
 const NOMBRES_SECCION = {
@@ -56,7 +57,7 @@ const BarraSuperior = ({
             aria-label={`Conectar al robot. Estado: ${estadoConexion || 'desconectado'}. Atajo de teclado: C`}
           >
             <span className="btn-texto">
-              <span aria-hidden="true">{estaConectado ? '✅' : '🔌'}</span> {estadoConexion || 'Conectar'}
+              <Icono nombre={estaConectado ? 'conectado' : 'bluetooth'} /> {estadoConexion || 'Conectar'}
             </span>
             <span className="btn-atajo">Presioná C</span>
           </button>

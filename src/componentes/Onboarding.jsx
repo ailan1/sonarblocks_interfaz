@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAudio } from '../hooks/useAudio';
+import Icono from './Icono';
 import '../estilos/Onboarding.css';
 
 const PASOS = [
   {
     tipo: 'cualquier-tecla',
-    icono: '👋',
+    icono: 'hola',
     titulo: '¡Bienvenido a SonarBlocks!',
     descripcion: 'Esta app te ayuda a programar un robot usando bloques. Apretá cualquier tecla para comenzar.',
     audio: '¡Hola! Bienvenido a SonarBlocks. Esta aplicación te ayuda a programar un robot usando bloques. Apretá cualquier tecla para comenzar el tutorial.',
@@ -14,7 +15,7 @@ const PASOS = [
   },
   {
     tipo: 'tecla',
-    icono: '🗂️',
+    icono: 'tab',
     titulo: 'La tecla TAB',
     descripcion: 'La tecla TAB te mueve entre las partes de la aplicación. ¡Apretala!',
     audio: 'La tecla Tab te mueve entre las partes de la aplicación. ¡Apretala!',
@@ -26,7 +27,7 @@ const PASOS = [
   },
   {
     tipo: 'tecla',
-    icono: '⌨️',
+    icono: 'enter',
     titulo: 'La tecla ENTER',
     descripcion: 'La tecla ENTER la vas a usar todo el tiempo. ¡Apretala ahora!',
     audio: 'La tecla Enter la vas a usar todo el tiempo. ¡Apretala ahora!',
@@ -39,7 +40,7 @@ const PASOS = [
   // Pasos de ajuste: la tecla se puede apretar varias veces y Enter sigue
   {
     tipo: 'ajuste',
-    icono: '🔊',
+    icono: 'velocidad',
     titulo: 'Velocidad de la voz',
     descripcion: 'Con la tecla V cambiás la velocidad de la voz: lenta, estándar o rápida. Apretala hasta que te guste, y después ENTER para seguir.',
     audio: 'Con la tecla V cambiás la velocidad de mi voz. Puede ser lenta, estándar o rápida. Apretá V hasta que te guste cómo hablo, y después apretá Enter para seguir.',
@@ -51,7 +52,7 @@ const PASOS = [
   },
   {
     tipo: 'ajuste',
-    icono: '🌓',
+    icono: 'contraste',
     titulo: 'Colores de la pantalla',
     descripcion: 'Con la tecla T cambiás los colores: estándar o alto contraste. Apretala hasta que veas mejor, y después ENTER para seguir.',
     audio: 'Con la tecla T cambiás los colores de la pantalla. Hay colores estándar, y colores de alto contraste que se ven más fuertes. Apretá T hasta que veas mejor, y después apretá Enter para seguir.',
@@ -63,7 +64,7 @@ const PASOS = [
   },
   {
     tipo: 'info',
-    icono: '🧩',
+    icono: 'bloques',
     titulo: '¿Qué son los bloques?',
     descripcion: 'Los bloques son las instrucciones que le das al robot. Cada categoría tiene bloques numerados. Apretás el número y se agrega al programa.',
     audio: 'Los bloques son las instrucciones que le das al robot. Cada categoría tiene bloques numerados. Apretás el número y se agrega al programa. Apretá Enter para seguir.',
@@ -71,31 +72,33 @@ const PASOS = [
   },
   {
     tipo: 'tecla',
-    icono: '⬇️',
+    icono: 'flecha-abajo',
     titulo: 'Flecha ABAJO',
     descripcion: 'Con la flecha abajo pasás a la siguiente categoría de bloques. ¡Apretala!',
     audio: 'Con la flecha abajo pasás a la siguiente categoría de bloques. ¡Apretala ahora!',
-    instruccion: 'Apretá ↓',
+    instruccion: 'Apretá la flecha abajo',
     teclaEsperada: 'ArrowDown',
-    teclaLabel: '↓',
+    teclaLabel: 'Abajo',
+    teclaIcono: 'flecha-abajo',
     audioError: '¡Esa no es! Apretá la flecha que va hacia abajo.',
     audioExito: '¡Excelente! Así bajás entre las categorías.',
   },
   {
     tipo: 'tecla',
-    icono: '⬆️',
+    icono: 'flecha-arriba',
     titulo: 'Flecha ARRIBA',
     descripcion: 'Con la flecha arriba volvés a la categoría anterior. ¡Apretala!',
     audio: 'Con la flecha arriba volvés a la categoría anterior. ¡Apretala ahora!',
-    instruccion: 'Apretá ↑',
+    instruccion: 'Apretá la flecha arriba',
     teclaEsperada: 'ArrowUp',
-    teclaLabel: '↑',
+    teclaLabel: 'Arriba',
+    teclaIcono: 'flecha-arriba',
     audioError: '¡Esa no es! Apretá la flecha que va hacia arriba.',
     audioExito: '¡Muy bien! Ya sabés moverte entre las categorías.',
   },
   {
     tipo: 'tecla',
-    icono: '🟢',
+    icono: 'inicio',
     titulo: 'Agregá el bloque Al empezar',
     descripcion: 'Estás en la categoría Inicio. Apretá 1 para agregar el bloque "Al empezar".',
     audio: 'Estás en la categoría Inicio. Apretá el número 1 para agregar el bloque Al empezar. Este bloque es el inicio de todo programa.',
@@ -109,19 +112,20 @@ const PASOS = [
   },
   {
     tipo: 'tecla',
-    icono: '⬇️',
+    icono: 'flecha-abajo',
     titulo: 'Ir a Movimiento',
     descripcion: 'Ahora bajá a la categoría Movimiento con la flecha abajo.',
     audio: 'Muy bien. Ahora apretá la flecha abajo para ir a la categoría Movimiento.',
-    instruccion: 'Apretá ↓',
+    instruccion: 'Apretá la flecha abajo',
     teclaEsperada: 'ArrowDown',
-    teclaLabel: '↓',
+    teclaLabel: 'Abajo',
+    teclaIcono: 'flecha-abajo',
     audioError: '¡Esa no es! Apretá la flecha hacia abajo.',
     audioExito: '¡Bien! Ahora estás en Movimiento.',
   },
   {
     tipo: 'tecla',
-    icono: '🔵',
+    icono: 'avanzar',
     titulo: 'Agregá Avanzar',
     descripcion: 'Estás en Movimiento. Apretá 1 para agregar el bloque Avanzar.',
     audio: 'Estás en la categoría Movimiento. Apretá 1 para agregar el bloque Avanzar.',
@@ -135,7 +139,7 @@ const PASOS = [
   },
   {
     tipo: 'tecla',
-    icono: '🟣',
+    icono: 'izquierda',
     titulo: 'Agregá Izquierda',
     descripcion: 'Apretá 2 para agregar el bloque Izquierda.',
     audio: 'Ahora apretá 2 para agregar el bloque Izquierda.',
@@ -149,7 +153,7 @@ const PASOS = [
   },
   {
     tipo: 'tecla',
-    icono: '🟣',
+    icono: 'derecha',
     titulo: 'Agregá Derecha',
     descripcion: 'Apretá 3 para agregar el bloque Derecha.',
     audio: 'Ahora apretá 3 para agregar el bloque Derecha.',
@@ -163,19 +167,20 @@ const PASOS = [
   },
   {
     tipo: 'tecla',
-    icono: '⬇️',
+    icono: 'flecha-abajo',
     titulo: 'Ir a Acciones',
     descripcion: 'Bajá a la categoría Acciones con la flecha abajo.',
     audio: 'Muy bien. Apretá la flecha abajo para ir a la categoría Acciones.',
-    instruccion: 'Apretá ↓',
+    instruccion: 'Apretá la flecha abajo',
     teclaEsperada: 'ArrowDown',
-    teclaLabel: '↓',
+    teclaLabel: 'Abajo',
+    teclaIcono: 'flecha-abajo',
     audioError: '¡Esa no es! Apretá la flecha hacia abajo.',
     audioExito: '¡Bien! Ahora estás en Acciones.',
   },
   {
     tipo: 'tecla',
-    icono: '🟡',
+    icono: 'esperar',
     titulo: 'Agregá Esperar',
     descripcion: 'Estás en Acciones. Apretá 1 para agregar el bloque Esperar.',
     audio: 'Estás en la categoría Acciones. Apretá 1 para agregar el bloque Esperar.',
@@ -189,7 +194,7 @@ const PASOS = [
   },
   {
     tipo: 'info',
-    icono: '🔌',
+    icono: 'bluetooth',
     titulo: 'Conectar el robot',
     descripcion: 'Antes de ejecutar hay que conectar el robot. Apretá ENTER para continuar.',
     audio: 'Muy bien. Ya armaste tu primer programa. Ahora hay que conectar el robot. En el siguiente paso te explico cómo. Apretá Enter para continuar.',
@@ -197,7 +202,7 @@ const PASOS = [
   },
   {
     tipo: 'conectar',
-    icono: '🤖',
+    icono: 'robot',
     titulo: 'Conectá el robot',
     descripcion: 'Apretá C para conectar el robot, o TAB si no tenés el robot ahora.',
     audio: 'Apretá la letra C para conectar el robot. Se va a abrir una ventana del navegador. Dentro de esa ventana, usá Tab para moverte, la flecha abajo para bajar en la lista hasta encontrar tu robot, y Enter para conectarlo. Cuando se conecte, el tutorial va a seguir solo. Si no tenés el robot ahora, apretá Tab para saltear este paso.',
@@ -206,7 +211,7 @@ const PASOS = [
   },
   {
     tipo: 'info',
-    icono: '▶️',
+    icono: 'ejecutar',
     titulo: 'Ejecutar el programa',
     descripcion: 'Con el robot conectado, apretás "Ejecutar" y el robot hace todo lo que programaste.',
     audio: 'Perfecto. Con el robot conectado, apretás el botón Ejecutar y el robot hace todo lo que programaste. Apretá Enter para continuar.',
@@ -214,7 +219,7 @@ const PASOS = [
   },
   {
     tipo: 'tecla',
-    icono: '🏆',
+    icono: 'trofeo',
     titulo: '¡Lo lograste!',
     descripcion: '¡Ya programaste tu primer robot! Conectalo y apretá Ejecutar para verlo en acción.',
     audio: '¡Felicitaciones! Ya programaste tu primer robot. Tenés los bloques Al empezar, Avanzar, Izquierda, Derecha y Esperar listos. Conectá el robot, apretá Ejecutar y mirá lo que hace. Apretá Enter para cerrar el tutorial y empezar.',
@@ -427,8 +432,8 @@ const Onboarding = ({
             onClick={handleSalir}
             aria-label="Saltar tutorial y cerrar"
             title="Saltar tutorial"
-          >✕</button>
-          <div className="onboarding-icono" style={{ fontSize: '4rem' }}>🤖</div>
+          ><Icono nombre="cruz" size={20} /></button>
+          <div className="onboarding-icono"><Icono nombre="robot" size={72} strokeWidth={2} /></div>
           <h2 className="onboarding-titulo">¡Bienvenido a SonarBlocks!</h2>
           <p className="onboarding-descripcion">
             Antes de empezar, vamos a hacer un tutorial corto para aprender a usar la app.
@@ -439,7 +444,7 @@ const Onboarding = ({
             autoFocus
             aria-label="Comenzar tutorial. También podés presionar cualquier tecla."
           >
-            ▶ Comenzar tutorial
+            <Icono nombre="ejecutar" /> Comenzar tutorial
           </button>
           <p className="onboarding-hint">También podés presionar cualquier tecla</p>
         </div>
@@ -464,7 +469,7 @@ const Onboarding = ({
           onClick={handleSalir}
           aria-label="Saltar tutorial y cerrar"
           title="Saltar tutorial"
-        >✕</button>
+        ><Icono nombre="cruz" size={20} /></button>
 
         <div className="onboarding-barra-wrap" aria-label={`Paso ${pasoActual + 1} de ${PASOS.length}`}>
           <div className="onboarding-barra-fondo">
@@ -474,19 +479,21 @@ const Onboarding = ({
         </div>
 
         <div className="onboarding-contenido" key={pasoActual}>
-          <div className="onboarding-icono">{paso.icono}</div>
+          <div className="onboarding-icono"><Icono nombre={paso.icono} size={60} strokeWidth={2} /></div>
           <h2 className="onboarding-titulo">{paso.titulo}</h2>
           <p className="onboarding-descripcion">{paso.descripcion}</p>
 
           {(paso.tipo === 'tecla' || paso.tipo === 'cualquier-tecla') && (
             <div className={`onboarding-zona-tecla estado-${estado}`} aria-live="assertive">
               <div className={`onboarding-tecla-visual tecla-${estado === 'esperando' ? 'espera' : estado}`}>
-                <span className="onboarding-tecla-label">{paso.teclaLabel}</span>
+                {paso.teclaIcono
+                  ? <span className="onboarding-tecla-label" aria-label={paso.teclaLabel}><Icono nombre={paso.teclaIcono} size={44} strokeWidth={3} /></span>
+                  : <span className="onboarding-tecla-label">{paso.teclaLabel}</span>}
               </div>
               <p className={`onboarding-feedback feedback-${estado}`}>
-                {estado === 'esperando' && `👆 ${paso.instruccion}`}
-                {estado === 'exito'     && '✅ ¡Muy bien!'}
-                {estado === 'error'     && '❌ ¡Esa no es! Intentá de nuevo'}
+                {estado === 'esperando' && <><Icono nombre="senalar" /> {paso.instruccion}</>}
+                {estado === 'exito'     && <><Icono nombre="bien" /> ¡Muy bien!</>}
+                {estado === 'error'     && <><Icono nombre="mal" /> ¡Esa no es! Intentá de nuevo</>}
               </p>
             </div>
           )}
@@ -501,9 +508,9 @@ const Onboarding = ({
               <p className={`onboarding-feedback feedback-${
                 estadoConectar === 'conectado' ? 'exito' : 'esperando'
               }`}>
-                {estadoConectar === 'esperando'  && '👆 Apretá C para conectar o TAB para saltear'}
-                {estadoConectar === 'conectando' && '⏳ Esperando conexión...'}
-                {estadoConectar === 'conectado'  && '✅ ¡Robot conectado!'}
+                {estadoConectar === 'esperando'  && <><Icono nombre="senalar" /> Apretá C para conectar o TAB para saltear</>}
+                {estadoConectar === 'conectando' && <><Icono nombre="ejecutando" className="icono-girando" /> Esperando conexión...</>}
+                {estadoConectar === 'conectado'  && <><Icono nombre="bien" /> ¡Robot conectado!</>}
               </p>
             </div>
           )}
@@ -517,14 +524,16 @@ const Onboarding = ({
                 Ahora: <strong>{paso.ajuste === 'velocidad' ? etiquetaVelocidad : etiquetaTema}</strong>
               </p>
               <p className={`onboarding-feedback feedback-${estado === 'error' ? 'error' : 'esperando'}`}>
-                {estado === 'error' ? `❌ ${paso.audioError}` : `👆 ${paso.instruccion}`}
+                {estado === 'error'
+                  ? <><Icono nombre="mal" /> {paso.audioError}</>
+                  : <><Icono nombre="senalar" /> {paso.instruccion}</>}
               </p>
             </div>
           )}
 
           {paso.tipo === 'info' && (
             <div className="onboarding-instruccion-info">
-              ⏎ {paso.instruccion}
+              <Icono nombre="enter" /> {paso.instruccion}
             </div>
           )}
         </div>

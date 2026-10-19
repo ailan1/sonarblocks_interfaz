@@ -1,4 +1,5 @@
 import React from 'react';
+import Icono from './Icono';
 
 /**
  * ControlVelocidad
@@ -13,7 +14,7 @@ const ControlVelocidad = ({ etiqueta, onCambiar }) => (
     aria-label={`Velocidad de voz: ${etiqueta}. Presioná V para cambiar.`}
     title="Cambiar velocidad de la voz"
   >
-    <span className="btn-texto"><span aria-hidden="true">🔊</span> {etiqueta}</span>
+    <span className="btn-texto"><Icono nombre="velocidad" /> {etiqueta}</span>
     <span className="btn-atajo">Presioná V</span>
   </button>
 );

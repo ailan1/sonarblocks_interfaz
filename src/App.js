@@ -43,17 +43,20 @@ function App() {
     bloques,
     ejecutando,
     indiceActual,
+    pasoActual,
+    esperandoVeces,
     agregarBloque,
+    elegirVeces,
+    cancelarRepetir,
     eliminarUltimoBloque,
     ejecutarPrograma,
     leerPrograma,
     limpiarBloques,
   } = useBloques(tipoProgramacion, { enviarComando, estaConectado });
 
-  const { categoriaSeleccionada, modoNavegacion, seccionActiva } = useTeclado({
+  const { categoriaSeleccionada, modoNavegacion, seccionActiva, seleccionarCategoria } = useTeclado({
     tipoProgramacion,
     datosModoActual,
-    teclasRapidasActuales,
     ejecutando,
     deshabilitado: mostrarOnboarding,
     onAgregarBloque: agregarBloque,
@@ -64,6 +67,9 @@ function App() {
     onCambiarTema: cambiarTema,
     onCambiarVelocidad: cambiarVelocidad,
     estaConectado,
+    esperandoVeces,
+    onElegirVeces: elegirVeces,
+    onCancelarRepetir: cancelarRepetir,
   });
 
   return (
@@ -103,6 +109,7 @@ function App() {
             teclasRapidas={teclasRapidasActuales}
             deshabilitado={ejecutando}
             categoriaSeleccionada={categoriaSeleccionada}
+            onSeleccionarCategoria={seleccionarCategoria}
             modoNavegacion={modoNavegacion}
             activa={seccionActiva === 'categorias'}
           />
@@ -113,6 +120,10 @@ function App() {
               onAgregarBloque={agregarBloque}
               modo={tipoProgramacion}
               ejecutando={ejecutando}
+              indiceActual={indiceActual}
+              esperandoVeces={esperandoVeces}
+              onElegirVeces={elegirVeces}
+              onCancelarRepetir={cancelarRepetir}
               activa={seccionActiva === 'area-trabajo'}
             />
 
@@ -129,7 +140,7 @@ function App() {
           <RobotSimulador
             bloques={bloques}
             ejecutando={ejecutando}
-            indiceActual={indiceActual}
+            pasoActual={pasoActual}
           />
         </div>
       </DndProvider>

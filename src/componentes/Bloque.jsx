@@ -1,6 +1,7 @@
 import React from "react";
 import { useDrag } from "react-dnd";
 import { colorTextoPara } from "../datos/bloquesData";
+import Icono from "./Icono";
 
 const Bloque = ({ texto, color, icono, tecla, onClick, esArrastrable = true }) => {
   // Solo hacer arrastrable si está en la paleta
@@ -30,7 +31,7 @@ const Bloque = ({ texto, color, icono, tecla, onClick, esArrastrable = true }) =
         opacity: isDragging ? 0.5 : 1,
       }}
     >
-      {icono && <span className="bloque-icono" aria-hidden="true">{icono}</span>}
+      {icono && <span className="bloque-icono"><Icono nombre={icono} size={24} /></span>}
       <span className="bloque-texto">{texto}</span>
       {tecla && (
         <span className="bloque-tecla" aria-label={`tecla ${tecla}`}>{tecla}</span>

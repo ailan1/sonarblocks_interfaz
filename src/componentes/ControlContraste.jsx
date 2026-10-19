@@ -1,4 +1,5 @@
 import React from 'react';
+import Icono from './Icono';
 
 /**
  * ControlContraste
@@ -13,7 +14,7 @@ const ControlContraste = ({ etiqueta, onCambiar }) => (
     aria-label={`Colores: ${etiqueta}. Presioná T para cambiar.`}
     title="Cambiar el contraste de los colores"
   >
-    <span className="btn-texto"><span aria-hidden="true">🌓</span> {etiqueta}</span>
+    <span className="btn-texto"><Icono nombre="contraste" /> {etiqueta}</span>
     <span className="btn-atajo">Presioná T</span>
   </button>
 );

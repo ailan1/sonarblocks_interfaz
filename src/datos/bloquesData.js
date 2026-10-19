@@ -1,5 +1,8 @@
+import { nombreBase } from "../utils/programa";
+
 // Colores del modo básico: paleta Okabe-Ito, distinguible con daltonismo.
 // Cada bloque tiene un color e ícono propios, para no depender solo del color.
+// "icono" es un nombre de componentes/Icono.jsx (librería Lucide).
 // El color del texto (blanco o negro) lo elige Bloque.jsx según el contraste.
 export const bloquesData = {
   base: {
@@ -12,7 +15,7 @@ export const bloquesData = {
           {
             nombre: "Al empezar",
             color: "#009E73",
-            icono: "🚩",
+            icono: "inicio",
             tecla: "1",
             codigo: "start",
             descripcionAudio: "Bloque de inicio del programa",
@@ -25,7 +28,7 @@ export const bloquesData = {
           {
             nombre: "Avanzar",
             color: "#0072B2",
-            icono: "⬆",
+            icono: "avanzar",
             tecla: "1",
             codigo: "move_forward",
             descripcionAudio: "Avanzar"
@@ -33,7 +36,7 @@ export const bloquesData = {
           {
             nombre: "Izquierda",
             color: "#E69F00",
-            icono: "↰",
+            icono: "izquierda",
             tecla: "2",
             codigo: "turn_left",
             descripcionAudio: "Girar a la izquierda"
@@ -41,7 +44,7 @@ export const bloquesData = {
           {
             nombre: "Derecha",
             color: "#CC79A7",
-            icono: "↱",
+            icono: "derecha",
             tecla: "3",
             codigo: "turn_right",
             descripcionAudio: "Girar a la derecha"
@@ -54,10 +57,71 @@ export const bloquesData = {
           {
             nombre: "Esperar",
             color: "#F0E442",
-            icono: "⏸",
+            icono: "esperar",
             tecla: "1",
             codigo: "wait",
             descripcionAudio: "Esperar"
+          },
+          {
+            nombre: "Bip",
+            color: "#6D4C41",
+            icono: "bip",
+            tecla: "2",
+            codigo: "play_tone",
+            descripcionAudio: "El robot hace un sonido"
+          }
+        ]
+      },
+      // Repetir y Fin de repetir comparten color: son una pareja.
+      // No tienen código: la app despliega la repetición (utils/programa.js).
+      {
+        nombre: "Repetir",
+        bloques: [
+          {
+            nombre: "Repetir",
+            color: "#56B4E9",
+            icono: "repetir",
+            tecla: "1",
+            codigo: null,
+            descripcionAudio: "Repite los bloques que siguen"
+          },
+          {
+            nombre: "Fin de repetir",
+            color: "#56B4E9",
+            icono: "fin-repetir",
+            tecla: "2",
+            codigo: null,
+            descripcionAudio: "Termina la repetición"
+          }
+        ]
+      },
+      // Comandos que el programa de la micro:bit ya entiende
+      {
+        nombre: "Luces",
+        bloques: [
+          {
+            nombre: "Corazón",
+            color: "#C62828",
+            icono: "corazon",
+            tecla: "1",
+            codigo: "show_icon_heart",
+            descripcionAudio: "Muestra un corazón en las luces del robot"
+          },
+          {
+            nombre: "Cruz",
+            color: "#8E3BB0",
+            icono: "cruz",
+            tecla: "2",
+            codigo: "show_icon_cross",
+            descripcionAudio: "Muestra una cruz en las luces del robot"
+          },
+          {
+            nombre: "Apagar luces",
+            color: "#3A3A3A",
+            icono: "apagar-luces",
+            tecla: "3",
+            codigo: "clear_screen",
+            descripcionAudio: "Apaga las luces del robot"
           }
         ]
       },
@@ -171,11 +235,13 @@ export const obtenerBloquesPorModo = (modo) => {
   return bloquesData[modo] || bloquesData.base;
 };
 
+// Acepta también "Repetir 4 veces" (devuelve los datos de "Repetir")
 export const obtenerBloque = (modo, nombreBloque) => {
   const datosModo = bloquesData[modo];
   if (!datosModo) return null;
+  const nombre = nombreBase(nombreBloque);
   for (const categoria of datosModo.categorias) {
-    const bloque = categoria.bloques.find(b => b.nombre === nombreBloque);
+    const bloque = categoria.bloques.find(b => b.nombre === nombre);
     if (bloque) return bloque;
   }
   return null;

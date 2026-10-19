@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import { expandirPrograma } from '../utils/programa';
+import Icono from './Icono';
 
 const TAMANO_ARENA = 300;
 const PASO_MOVIMIENTO = 60;
@@ -13,27 +15,55 @@ const DELTA = {
 };
 const GIRO_IZQ = { norte: 'oeste', oeste: 'sur', sur: 'este', este: 'norte' };
 const GIRO_DER = { norte: 'este', este: 'sur', sur: 'oeste', oeste: 'norte' };
+// Texto e ícono que se muestran debajo del simulador mientras se ejecuta cada bloque
 const LABELS = {
-  Avanzar: '▶ Avanzando...',
-  Izquierda: '↰ Girando izquierda...',
-  Derecha: '↱ Girando derecha...',
-  Esperar: '⏸ Esperando...',
+  Avanzar:        { icono: 'avanzar',      texto: 'Avanzando...' },
+  Izquierda:      { icono: 'izquierda',    texto: 'Girando izquierda...' },
+  Derecha:        { icono: 'derecha',      texto: 'Girando derecha...' },
+  Esperar:        { icono: 'esperar',      texto: 'Esperando...' },
+  Bip:            { icono: 'bip',          texto: '¡Bip!' },
+  'Corazón':      { icono: 'corazon',      texto: 'Mostrando corazón' },
+  Cruz:           { icono: 'cruz',         texto: 'Mostrando cruz' },
+  'Apagar luces': { icono: 'apagar-luces', texto: 'Apagando luces' },
+};
+
+// Dibujos de la pantalla de luces 5×5 (los mismos íconos que usa la micro:bit)
+const DIBUJOS_LUCES = {
+  'Corazón': [
+    '.#.#.',
+    '#####',
+    '#####',
+    '.###.',
+    '..#..',
+  ],
+  Cruz: [
+    '#...#',
+    '.#.#.',
+    '..#..',
+    '.#.#.',
+    '#...#',
+  ],
 };
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-// Recorre el programa hasta el bloque que se está ejecutando y devuelve
-// dónde está el robot, hacia dónde mira y el rastro que dejó.
-// El robot arranca en el centro mirando al este.
-const calcularEstado = (bloques, indiceActual) => {
+// Recorre los pasos del programa (con las repeticiones ya desplegadas) hasta
+// el que se está ejecutando, y devuelve dónde está el robot, hacia dónde mira,
+// el rastro que dejó y qué muestran sus luces.
+// El robot arranca en el centro mirando al este, con las luces apagadas.
+const calcularEstado = (pasos, pasoActual) => {
   let pos = { x: CENTRO, y: CENTRO };
   let dir = 'este';
+  let luces = null;
   const rastro = [];
 
-  if (indiceActual === null) return { pos, dir, rastro };
+  if (pasoActual === null) return { pos, dir, rastro, luces };
 
-  for (let i = 0; i <= indiceActual && i < bloques.length; i++) {
-    switch (bloques[i]) {
+  for (let i = 0; i <= pasoActual && i < pasos.length; i++) {
+    const bloque = pasos[i].bloque;
+    if (DIBUJOS_LUCES[bloque])     { luces = bloque; continue; }
+    if (bloque === 'Apagar luces') { luces = null;   continue; }
+    switch (bloque) {
       case 'Avanzar': {
         const nueva = {
           x: clamp(pos.x + DELTA[dir].x, 20, TAMANO_ARENA - 20),
@@ -53,7 +83,19 @@ const calcularEstado = (bloques, indiceActual) => {
         break;
     }
   }
-  return { pos, dir, rastro };
+  return { pos, dir, rastro, luces };
+};
+
+// Pantalla de luces 5×5, como la de la micro:bit
+const PantallaLuces = ({ dibujo }) => {
+  const filas = DIBUJOS_LUCES[dibujo] || Array(5).fill('.....');
+  return (
+    <div className="pantalla-luces" role="img" aria-label={dibujo ? `Luces: ${dibujo}` : 'Luces apagadas'}>
+      {filas.flatMap((fila, y) => [...fila].map((c, x) => (
+        <span key={`${x}-${y}`} className={`luz ${c === '#' ? 'luz-prendida' : ''}`} />
+      )))}
+    </div>
+  );
 };
 
 const RobotSVG = ({ esperando }) => (
@@ -92,20 +134,24 @@ const RobotSVG = ({ esperando }) => (
   </g>
 );
 
-const EstadoActual = ({ ejecutando, bloques, indiceActual }) => {
+const EstadoActual = ({ ejecutando, paso }) => {
   if (!ejecutando) return '— En espera —';
-  if (indiceActual === null) return '';
-  return LABELS[bloques[indiceActual]] || '';
+  const label = paso && LABELS[paso.bloque];
+  if (!label) return '';
+  const vuelta = paso.vuelta ? ` (vuelta ${paso.vuelta} de ${paso.veces})` : '';
+  return <><Icono nombre={label.icono} size={18} /> {label.texto}{vuelta}</>;
 };
 
-// El simulador no tiene reloj propio: sigue a `indiceActual`, que lo marca
+// El simulador no tiene reloj propio: sigue a `pasoActual`, que lo marca
 // useBloques al mismo tiempo que le envía el comando al robot físico.
-const RobotSimulador = ({ bloques, ejecutando, indiceActual }) => {
-  const { pos, dir, rastro } = useMemo(
-    () => calcularEstado(bloques, ejecutando ? indiceActual : null),
-    [bloques, ejecutando, indiceActual]
+const RobotSimulador = ({ bloques, ejecutando, pasoActual }) => {
+  const pasos = useMemo(() => expandirPrograma(bloques), [bloques]);
+  const { pos, dir, rastro, luces } = useMemo(
+    () => calcularEstado(pasos, ejecutando ? pasoActual : null),
+    [pasos, ejecutando, pasoActual]
   );
-  const esperando = ejecutando && bloques[indiceActual] === 'Esperar';
+  const paso = ejecutando && pasoActual !== null ? pasos[pasoActual] : null;
+  const esperando = paso?.bloque === 'Esperar';
 
   const rotacion = ROTACION[dir];
 
@@ -174,8 +220,11 @@ const RobotSimulador = ({ bloques, ejecutando, indiceActual }) => {
 
       {/* Estado actual */}
       <div className="simulador-estado">
-        <EstadoActual ejecutando={ejecutando} bloques={bloques} indiceActual={indiceActual} />
+        <EstadoActual ejecutando={ejecutando} paso={paso} />
       </div>
+
+      <span className="simulador-titulo">Luces del robot</span>
+      <PantallaLuces dibujo={luces} />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAudio, NARRATIVA } from './useAudio';
 
 // 'conexion' va al final: no cambia el orden que los chicos ya conocen,
@@ -10,6 +10,8 @@ const NARRATIVA_CATEGORIAS = {
   'Inicio':     NARRATIVA.INICIO,
   'Movimiento': NARRATIVA.MOVIMIENTO,
   'Acciones':   NARRATIVA.ACCIONES,
+  'Repetir':    NARRATIVA.REPETIR,
+  'Luces':      NARRATIVA.LUCES,
 };
 
 // Feedback auditivo por sección (Tab)
@@ -23,7 +25,6 @@ const NARRATIVA_SECCIONES = {
 export function useTeclado({
   tipoProgramacion,
   datosModoActual,
-  teclasRapidasActuales,
   ejecutando,
   deshabilitado,
   onAgregarBloque,
@@ -34,6 +35,9 @@ export function useTeclado({
   onCambiarTema,
   onCambiarVelocidad,
   estaConectado,
+  esperandoVeces,
+  onElegirVeces,
+  onCancelarRepetir,
 }) {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(0);
   const [seccionActiva, setSeccionActiva]   = useState('categorias');
@@ -45,8 +49,8 @@ export function useTeclado({
   const seccionRef          = useRef(seccionActiva);
   const categoriaRef        = useRef(categoriaSeleccionada);
   const datosModoRef        = useRef(datosModoActual);
-  const teclasRapidasRef    = useRef(teclasRapidasActuales);
   const estaConectadoRef    = useRef(estaConectado);
+  const esperandoVecesRef   = useRef(esperandoVeces);
 
   // ── Refs para callbacks — evitan stale closures en el listener ────────────
   const onAgregarBloqueRef  = useRef(onAgregarBloque);
@@ -56,12 +60,14 @@ export function useTeclado({
   const onConectarRef       = useRef(onConectar);
   const onCambiarTemaRef    = useRef(onCambiarTema);
   const onCambiarVelocidadRef = useRef(onCambiarVelocidad);
+  const onElegirVecesRef    = useRef(onElegirVeces);
+  const onCancelarRepetirRef = useRef(onCancelarRepetir);
 
   useEffect(() => { seccionRef.current          = seccionActiva;         }, [seccionActiva]);
   useEffect(() => { categoriaRef.current        = categoriaSeleccionada; }, [categoriaSeleccionada]);
   useEffect(() => { datosModoRef.current        = datosModoActual;       }, [datosModoActual]);
-  useEffect(() => { teclasRapidasRef.current    = teclasRapidasActuales; }, [teclasRapidasActuales]);
   useEffect(() => { estaConectadoRef.current    = estaConectado;         }, [estaConectado]);
+  useEffect(() => { esperandoVecesRef.current   = esperandoVeces;        }, [esperandoVeces]);
   useEffect(() => { onAgregarBloqueRef.current  = onAgregarBloque;       }, [onAgregarBloque]);
   useEffect(() => { onEliminarUltimoRef.current = onEliminarUltimo;      }, [onEliminarUltimo]);
   useEffect(() => { onEjecutarRef.current       = onEjecutar;            }, [onEjecutar]);
@@ -69,12 +75,35 @@ export function useTeclado({
   useEffect(() => { onConectarRef.current       = onConectar;            }, [onConectar]);
   useEffect(() => { onCambiarTemaRef.current    = onCambiarTema;         }, [onCambiarTema]);
   useEffect(() => { onCambiarVelocidadRef.current = onCambiarVelocidad;  }, [onCambiarVelocidad]);
+  useEffect(() => { onElegirVecesRef.current    = onElegirVeces;         }, [onElegirVeces]);
+  useEffect(() => { onCancelarRepetirRef.current = onCancelarRepetir;    }, [onCancelarRepetir]);
+
+  // Elegir categoría con el mouse (clic en su nombre): mismo efecto que las flechas
+  const seleccionarCategoria = useCallback((indice) => {
+    categoriaRef.current = indice;
+    seccionRef.current   = 'categorias';
+    setCategoriaSeleccionada(indice);
+    setSeccionActiva('categorias');
+    const msg = NARRATIVA_CATEGORIAS[datosModoRef.current.categorias[indice]?.nombre];
+    if (msg) hablar(msg);
+  }, [hablar]);
 
   useEffect(() => {
     const manejarTecla = (e) => {
       if (deshabilitado) return;
       if (ejecutando && e.key !== 'Escape') return;
       const tecla = e.key.toLowerCase();
+
+      // ── ELEGIR CUÁNTAS VECES REPETIR (después de agregar "Repetir") ───────
+      // Mientras tanto solo valen los números 2 a 9, Retroceso/Escape y R.
+      if (esperandoVecesRef.current) {
+        e.preventDefault();
+        if (/^[2-9]$/.test(tecla))                    onElegirVecesRef.current?.(Number(tecla));
+        else if (tecla === 'backspace' || tecla === 'escape') onCancelarRepetirRef.current?.();
+        else if (tecla === 'r')                       repetirUltimo();
+        else                                          hablar(NARRATIVA.SOLONUMEROS);
+        return;
+      }
 
       // ── TAB: navega entre secciones lógicas ──────────────────────────────
       if (e.key === 'Tab' && tipoProgramacion !== '') {
@@ -148,8 +177,11 @@ export function useTeclado({
       );
       if (bloqueEnCategoria) { onAgregarBloqueRef.current?.(bloqueEnCategoria.nombre); return; }
 
-      if (teclasRapidasRef.current[tecla]) {
-        onAgregarBloqueRef.current?.(teclasRapidasRef.current[tecla]);
+      // Número que no está en esta categoría: avisar y recordar cuáles hay.
+      // (Antes agregaba un bloque de otra categoría, y eso confundía.)
+      if (/^[0-9]$/.test(tecla)) {
+        const msgCategoria = NARRATIVA_CATEGORIAS[catActual?.nombre] || '';
+        hablar(`${NARRATIVA.NOHAYBLOQUE(tecla)} ${msgCategoria}`);
       }
     };
 
@@ -158,5 +190,5 @@ export function useTeclado({
 
   }, [ejecutando, deshabilitado, tipoProgramacion, hablar, repetirUltimo, narrativa]); // hablar/repetirUltimo/narrativa nunca cambian
 
-  return { categoriaSeleccionada, seccionActiva, modoNavegacion };
+  return { categoriaSeleccionada, seccionActiva, modoNavegacion, seleccionarCategoria };
 }
