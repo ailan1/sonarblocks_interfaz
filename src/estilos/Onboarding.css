@@ -311,3 +311,25 @@
 [data-tema="alto-contraste"] .tecla-error { border-color: #FF8A80; box-shadow: 0 4px 0 #FF8A80; }
 [data-tema="alto-contraste"] .tecla-error .onboarding-tecla-label,
 [data-tema="alto-contraste"] .feedback-error { color: #FF8A80; }
+
+/* ── Íconos (Lucide) ───────────────────────────────────────────────────── */
+.onboarding-icono {
+  color: var(--acento);
+  display: flex;
+  justify-content: center;
+}
+
+.onboarding-feedback,
+.onboarding-instruccion-info,
+.onboarding-btn-comenzar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.onboarding-tecla-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

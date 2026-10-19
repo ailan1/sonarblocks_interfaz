@@ -1,4 +1,5 @@
 import React from "react";
+import Icono from "./Icono";
 
 const ControlesPrograma = ({
   bloques,
@@ -15,21 +16,23 @@ const ControlesPrograma = ({
         onClick={onEjecutar}
         disabled={ejecutando}
       >
-        {ejecutando ? '⏸️ Ejecutando...' : '▶ Ejecutar'}
+        {ejecutando
+          ? <><Icono nombre="ejecutando" className="icono-girando" /> Ejecutando...</>
+          : <><Icono nombre="ejecutar" /> Ejecutar</>}
       </button>
       <button
         className="btn-control btn-eliminar"
         onClick={onEliminarUltimo}
         disabled={ejecutando}
       >
-        ⬅ Borrar último
+        <Icono nombre="borrar" /> Borrar último
       </button>
       <button
         className="btn-control btn-hablar"
         onClick={onLeerPrograma}
         disabled={ejecutando}
       >
-        📢 Leer programa
+        <Icono nombre="leer" /> Leer programa
       </button>
     </div>
   );
