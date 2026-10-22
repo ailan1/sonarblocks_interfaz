@@ -389,6 +389,20 @@ button {
   color: var(--btn-leer-texto);
 }
 
+.btn-parar {
+  background: var(--btn-parar);
+  color: var(--btn-parar-texto);
+}
+
+/* "Esc" junto a Parar: enseña la tecla */
+.btn-tecla {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8em;
+  padding: 1px 6px;
+  border: 2px solid currentColor;
+  border-radius: 5px;
+}
+
 .btn-control:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
@@ -481,6 +495,8 @@ button {
   .controles-programa { gap: 8px; padding: 10px; }
   /* En mayúscula el texto es más ancho: se permite partir en dos líneas */
   .btn-control        { flex-basis: 0; min-width: 0; padding: 8px 6px; font-size: 0.95rem; white-space: normal; line-height: 1.2; }
+  /* "Esc" no entra al lado de "Parar lectura": la voz igual dice la tecla */
+  .btn-tecla          { display: none; }
 }
 
 /* Celulares y tablets en vertical: una columna, la página sí se desplaza */

@@ -18,7 +18,7 @@ const NARRATIVA_CATEGORIAS = {
 const NARRATIVA_SECCIONES = {
   'categorias':   'Sección Categorías. Usá las flechas para moverte entre categorías, y el número de cada bloque para agregarlo.',
   'area-trabajo': 'Sección Área de trabajo. Aquí se muestra tu programa actual.',
-  'ejecucion':    'Sección Ejecución. Presioná Espacio para ejecutar, L para leer el programa, o Retroceso para borrar el último bloque.',
+  'ejecucion':    'Sección Ejecución. Presioná Espacio para ejecutar, Escape para parar, L para leer el programa, o Retroceso para borrar el último bloque.',
   'ajustes':      'Sección Ajustes. Presioná V para cambiar la velocidad de la voz, o T para cambiar los colores de la pantalla.',
 };
 
@@ -38,6 +38,7 @@ export function useTeclado({
   esperandoVeces,
   onElegirVeces,
   onCancelarRepetir,
+  onParar,
 }) {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(0);
   const [seccionActiva, setSeccionActiva]   = useState('categorias');
@@ -62,6 +63,7 @@ export function useTeclado({
   const onCambiarVelocidadRef = useRef(onCambiarVelocidad);
   const onElegirVecesRef    = useRef(onElegirVeces);
   const onCancelarRepetirRef = useRef(onCancelarRepetir);
+  const onPararRef          = useRef(onParar);
 
   useEffect(() => { seccionRef.current          = seccionActiva;         }, [seccionActiva]);
   useEffect(() => { categoriaRef.current        = categoriaSeleccionada; }, [categoriaSeleccionada]);
@@ -77,6 +79,7 @@ export function useTeclado({
   useEffect(() => { onCambiarVelocidadRef.current = onCambiarVelocidad;  }, [onCambiarVelocidad]);
   useEffect(() => { onElegirVecesRef.current    = onElegirVeces;         }, [onElegirVeces]);
   useEffect(() => { onCancelarRepetirRef.current = onCancelarRepetir;    }, [onCancelarRepetir]);
+  useEffect(() => { onPararRef.current          = onParar;               }, [onParar]);
 
   // Elegir categoría con el mouse (clic en su nombre): mismo efecto que las flechas
   const seleccionarCategoria = useCallback((indice) => {
@@ -104,6 +107,10 @@ export function useTeclado({
         else                                          hablar(NARRATIVA.SOLONUMEROS);
         return;
       }
+
+      // ── ESCAPE: para la ejecución o la lectura del programa ───────────────
+      // (es la única tecla que funciona mientras se ejecuta)
+      if (tecla === 'escape') { onPararRef.current?.(); return; }
 
       // ── TAB: navega entre secciones lógicas ──────────────────────────────
       if (e.key === 'Tab' && tipoProgramacion !== '') {

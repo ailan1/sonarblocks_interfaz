@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { obtenerBloque } from '../datos/bloquesData';
 import { useAudio, NARRATIVA } from './useAudio';
 import {
@@ -17,6 +17,26 @@ import {
 export const DURACION_BLOQUE = 2000;
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Comando para frenar el robot al apretar Parar (microbit/programa-microbit.js)
+const COMANDO_PARAR = 'stop';
+
+// Crea el control de una ejecución o lectura que se puede detener.
+// control.hasta(promesa) espera esa promesa, salvo que antes se llame a
+// control.detener(): en ese caso sigue enseguida y control.detenido queda en true.
+// porUsuario distingue el botón Parar de cuando otra acción la reemplaza
+// (por ejemplo, ejecutar mientras se leía): solo en el primer caso se avisa por voz.
+const crearControl = () => {
+  let avisar;
+  const parada = new Promise((r) => { avisar = r; });
+  const control = {
+    detenido: false,
+    porUsuario: false,
+    detener: (porUsuario = false) => { control.detenido = true; control.porUsuario = porUsuario; avisar(); },
+    hasta: (promesa) => Promise.race([promesa, parada]),
+  };
+  return control;
+};
 
 const NARRATIVA_AGREGAR = {
   'Al empezar':     NARRATIVA.BLOQUEINICIO,
@@ -59,8 +79,20 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
   const [indiceActual, setIndiceActual] = useState(null); // ← bloque del programa que se está ejecutando
   const [pasoActual, setPasoActual]     = useState(null); // ← paso del programa desplegado (con repeticiones)
   const [esperandoVeces, setEsperandoVeces] = useState(false); // ← se agregó Repetir y falta el número
+  const [leyendo, setLeyendo]           = useState(false);
 
-  const { hablar, hablarYEsperar, narrativa } = useAudio();
+  // Control de la ejecución o lectura en curso (null si no hay ninguna)
+  const controlRef = useRef(null);
+
+  const { hablar, hablarYEsperar, pararAudio, narrativa } = useAudio();
+
+  // Detiene la ejecución o la lectura en curso (botón Parar o tecla Escape)
+  const parar = useCallback(() => {
+    if (!controlRef.current) return;
+    controlRef.current.detener(true);
+    controlRef.current = null;
+    pararAudio();
+  }, [pararAudio]);
 
   const agregarBloque = useCallback((nombreBloque) => {
     // Si estaba eligiendo cuántas veces repetir y agrega otro bloque, se cancela
@@ -131,6 +163,10 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
     if (bloques[0] !== 'Al empezar') { hablar(narrativa.BLOQUEINICIOPARACOMENZAR);          return; }
     if (pasos.length === 0)          { hablar('Tu programa está vacío. Agrega más bloques'); return; }
 
+    controlRef.current?.detener(); // si estaba leyendo el programa, deja de leer
+    const control = crearControl();
+    controlRef.current = control;
+
     setEsperandoVeces(false);
     setEjecutando(true);
     setIndiceActual(null);
@@ -138,10 +174,10 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
 
     try {
       // Se espera a que terminen los avisos; si no, el primer bloque los cortaría
-      if (!estaConectado) await hablarYEsperar(narrativa.SINROBOT);
-      if (hayRepetirAbierto(bloques)) await hablarYEsperar(narrativa.FALTAFINREPETIR);
+      if (!estaConectado) await control.hasta(hablarYEsperar(narrativa.SINROBOT));
+      if (hayRepetirAbierto(bloques) && !control.detenido) await control.hasta(hablarYEsperar(narrativa.FALTAFINREPETIR));
 
-      for (let k = 0; k < pasos.length; k++) {
+      for (let k = 0; k < pasos.length && !control.detenido; k++) {
         const paso = pasos[k];
         if (paso.bloque.startsWith('Decir:')) continue;
         const bloqueData = obtenerBloque(tipoProgramacion, paso.bloque);
@@ -151,22 +187,30 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
         setPasoActual(k);
         setIndiceActual(paso.indice);
 
-        // Hablar en paralelo — no bloquea el loop. Al empezar cada vuelta se dice cuál es.
+        // La voz arranca junto con el robot. Al empezar cada vuelta se dice cuál es.
         let mensajeAudio = NARRATIVA_EJECUTAR[bloqueData.nombre] || '';
         if (paso.inicioVuelta) mensajeAudio = `${narrativa.VUELTA(paso.vuelta, paso.veces)} ${mensajeAudio}`;
-        if (mensajeAudio) hablar(mensajeAudio);
+        const voz = mensajeAudio ? hablarYEsperar(mensajeAudio) : Promise.resolve();
 
         // Enviar al robot físico si está conectado
-        if (estaConectado && enviarComando && bloqueData.codigo) await enviarComando(bloqueData.codigo);
+        if (estaConectado && enviarComando && bloqueData.codigo) await control.hasta(enviarComando(bloqueData.codigo));
 
-        // Esperar tiempo fijo por bloque para que el simulador y el robot tengan tiempo de actuar
-        await esperar(DURACION_BLOQUE);
+        // Cada paso dura DURACION_BLOQUE o lo que tarde la voz, lo que sea más largo.
+        // Así el paso siguiente nunca corta la frase a la mitad (pasaba con "Vuelta 1 de 4. ...").
+        await control.hasta(Promise.all([voz, esperar(DURACION_BLOQUE)]));
       }
-      hablar(narrativa.FINPROGRAMACION);
+
+      if (control.detenido) {
+        if (estaConectado && enviarComando) enviarComando(COMANDO_PARAR);
+        hablar(narrativa.PROGRAMADETENIDO);
+      } else {
+        hablar(narrativa.FINPROGRAMACION);
+      }
     } catch (err) {
       console.error('Error ejecutando programa:', err);
       hablar('Ha ocurrido un error');
     } finally {
+      if (controlRef.current === control) controlRef.current = null;
       setEjecutando(false);
       setIndiceActual(null);
       setPasoActual(null);
@@ -175,29 +219,46 @@ export function useBloques(tipoProgramacion, { enviarComando, estaConectado } = 
 
   const leerPrograma = useCallback(async () => {
     if (bloques.length === 0) { hablar('El programa está vacío'); return; }
-    await hablarYEsperar(narrativa.REVISARCODIGO);
-    await esperar(1000);
-    for (let i = 1; i < bloques.length; i++) {
-      const bloque = bloques[i];
-      if (bloque.startsWith('Decir:')) continue;
 
-      let mensajeAudio;
-      if (esRepetir(bloque))          mensajeAudio = narrativa.LEERREPETIR(vecesRepetir(bloque));
-      else if (bloque === FIN_REPETIR) mensajeAudio = narrativa.LEERFINREPETIR;
-      else                             mensajeAudio = NARRATIVA_LEER[obtenerBloque(tipoProgramacion, bloque)?.nombre];
+    controlRef.current?.detener(); // si ya estaba leyendo, empieza de nuevo
+    const control = crearControl();
+    controlRef.current = control;
+    setLeyendo(true);
 
-      if (mensajeAudio) await hablarYEsperar(mensajeAudio);
-      await esperar(2000);
+    try {
+      await control.hasta(hablarYEsperar(narrativa.REVISARCODIGO));
+      await control.hasta(esperar(1000));
+      for (let i = 1; i < bloques.length && !control.detenido; i++) {
+        const bloque = bloques[i];
+        if (bloque.startsWith('Decir:')) continue;
+
+        let mensajeAudio;
+        if (esRepetir(bloque))          mensajeAudio = narrativa.LEERREPETIR(vecesRepetir(bloque));
+        else if (bloque === FIN_REPETIR) mensajeAudio = narrativa.LEERFINREPETIR;
+        else                             mensajeAudio = NARRATIVA_LEER[obtenerBloque(tipoProgramacion, bloque)?.nombre];
+
+        if (mensajeAudio) await control.hasta(hablarYEsperar(mensajeAudio));
+        await control.hasta(esperar(2000));
+      }
+      if (control.detenido) {
+        if (control.porUsuario) hablar(narrativa.LECTURADETENIDA);
+      } else if (hayRepetirAbierto(bloques)) {
+        await control.hasta(hablarYEsperar(narrativa.FALTAFINREPETIR));
+      }
+    } finally {
+      if (controlRef.current === control) controlRef.current = null;
+      setLeyendo(false);
     }
-    if (hayRepetirAbierto(bloques)) await hablarYEsperar(narrativa.FALTAFINREPETIR);
   }, [bloques, tipoProgramacion, hablar, hablarYEsperar, narrativa]);
 
   return {
     bloques,
     ejecutando,
+    leyendo,
     indiceActual,
     pasoActual,
     esperandoVeces,
+    parar,
     agregarBloque,
     elegirVeces,
     cancelarRepetir,
