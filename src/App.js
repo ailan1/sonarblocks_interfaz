@@ -42,6 +42,8 @@ function App() {
   const {
     bloques,
     ejecutando,
+    leyendo,
+    parar,
     indiceActual,
     pasoActual,
     esperandoVeces,
@@ -70,6 +72,7 @@ function App() {
     esperandoVeces,
     onElegirVeces: elegirVeces,
     onCancelarRepetir: cancelarRepetir,
+    onParar: parar,
   });
 
   return (
@@ -128,11 +131,12 @@ function App() {
             />
 
             <ControlesPrograma
-              bloques={bloques}
               onEjecutar={ejecutarPrograma}
               onEliminarUltimo={eliminarUltimoBloque}
               onLeerPrograma={leerPrograma}
+              onParar={parar}
               ejecutando={ejecutando}
+              leyendo={leyendo}
               activa={seccionActiva === 'ejecucion'}
             />
           </div>

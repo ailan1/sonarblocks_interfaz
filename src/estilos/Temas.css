@@ -34,6 +34,8 @@
   --btn-eliminar-texto:  #FFFFFF;
   --btn-leer:            #FFBF00;  /* texto oscuro 10.5:1 */
   --btn-leer-texto:      #1A1A1A;
+  --btn-parar:           #1A1A2E;  /* blanco 17:1, distinto de los otros tres */
+  --btn-parar-texto:     #FFFFFF;
 
   --bloque-borde:        rgba(0, 0, 0, 0.35);
   --bloque-borde-ancho:  2px;
@@ -76,6 +78,8 @@
   --btn-eliminar-texto:  #FFE600;
   --btn-leer:            #000000;
   --btn-leer-texto:      #FFE600;
+  --btn-parar:           #FFE600;  /* invertido: se distingue de los demás */
+  --btn-parar-texto:     #000000;
 
   --bloque-borde:        #FFFFFF;
   --bloque-borde-ancho:  3px;

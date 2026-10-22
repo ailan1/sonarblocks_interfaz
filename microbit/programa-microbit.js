@@ -44,6 +44,12 @@ bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () 
     } else if (comando == "turn_right") {
         RingbitCar.steering_angle(RingbitCar.Direction_turn.right, 90)
 
+    // Botón "Parar" de la app
+    } else if (comando == "stop") {
+        // Frena los motores. Ojo: si en ese momento se está haciendo un "move_forward",
+        // puede que la placa termine ese movimiento antes de leer este comando.
+        RingbitCar.brake()
+
     // Acciones
     } else if (comando == "wait") {
         // La espera la marca la app (2 segundos por bloque): acá no hace falta nada

@@ -29,6 +29,7 @@ import {
   Pointer,
   Puzzle,
   Repeat,
+  Square,
   Trophy,
   Volume2,
   X,
@@ -64,6 +65,7 @@ const ICONOS = {
   'ejecutando':    LoaderCircle,
   'borrar':        Delete,
   'leer':          Megaphone,
+  'parar':         Square,
 
   // Navegación y estados
   'cerrada':       ChevronRight,

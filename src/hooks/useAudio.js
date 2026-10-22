@@ -43,6 +43,8 @@ export const NARRATIVA = {
   APAGALUCES:               'El robot apaga las luces.',
   LEERREPETIR:              (veces) => `Repetir ${veces} veces:`,
   LEERFINREPETIR:           'Fin de repetir.',
+  PROGRAMADETENIDO:         'Programa detenido.',
+  LECTURADETENIDA:          'Dejé de leer el programa.',
   BLOQUEINICIO:             '¡Muy bien! Pusiste el bloque Al empezar. ¡Este es el comienzo de tu programa!',
   AVANZAR:                  '¡Avanzar!',
   IZQUIERDA:                '¡A la izquierda!',
