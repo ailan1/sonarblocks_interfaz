@@ -38,6 +38,25 @@
   flex-shrink: 1;
 }
 
+/* Enlace chico al formulario de opinión: discreto, al lado del logo */
+.link-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--barra-texto);
+  opacity: 0.85;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.link-feedback:hover,
+.link-feedback:focus-visible {
+  opacity: 1;
+}
+
 .controles-barra {
   display: flex;
   gap: 12px;

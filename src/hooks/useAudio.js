@@ -75,6 +75,7 @@ const estadoVoz = {
   voz:           null,
   ultimoMensaje: '',
   generacion:    0, // aumenta en cada mensaje nuevo; corta las frases pendientes del anterior
+  utteranceActual: null, // referencia para que Chrome no lo libere antes de onend
 };
 
 const hayVoz = () => typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -138,13 +139,27 @@ const _speak = (texto, onEnd) => {
   const siguiente = () => {
     // Si empezó otro mensaje, no seguir con las frases de este
     if (generacion !== estadoVoz.generacion || i >= partes.length) { terminar(); return; }
-    const u = new SpeechSynthesisUtterance(partes[i++]);
+    const texto = partes[i++];
+    const u = new SpeechSynthesisUtterance(texto);
     u.lang  = 'es-AR';
     u.rate  = estadoVoz.velocidad;
     u.pitch = 1.1;
     if (estadoVoz.voz) u.voice = estadoVoz.voz;
-    u.onend   = siguiente;
-    u.onerror = siguiente;
+
+    // Chrome a veces no dispara onend (si se cancela y se habla enseguida, o si
+    // el utterance se libera de memoria). Sin esto, hablarYEsperar nunca termina
+    // y el tutorial queda trancado. Guardamos la referencia y ponemos un tope.
+    let avanzo = false;
+    const avanzar = () => {
+      if (avanzo) return;
+      avanzo = true;
+      clearTimeout(tope);
+      siguiente();
+    };
+    const tope = setTimeout(avanzar, 2000 + (texto.length * 110) / estadoVoz.velocidad);
+    estadoVoz.utteranceActual = u;
+    u.onend   = avanzar;
+    u.onerror = avanzar;
     window.speechSynthesis.speak(u);
   };
   siguiente();

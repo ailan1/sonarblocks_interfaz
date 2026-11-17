@@ -24,6 +24,7 @@ import {
   LightbulbOff,
   LoaderCircle,
   Megaphone,
+  MessageSquare,
   OctagonX,
   Play,
   Pointer,
@@ -66,6 +67,7 @@ const ICONOS = {
   'borrar':        Delete,
   'leer':          Megaphone,
   'parar':         Square,
+  'opinion':       MessageSquare,
 
   // Navegación y estados
   'cerrada':       ChevronRight,
