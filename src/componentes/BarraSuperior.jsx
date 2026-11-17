@@ -5,6 +5,9 @@ import ControlContraste from './ControlContraste';
 import Icono from './Icono';
 import '../estilos/BarraSuperior.css';
 
+// Link al formulario de Google para que nos dejen su opinión
+const URL_FORMULARIO_FEEDBACK = 'https://docs.google.com/forms/d/e/1FAIpQLSeXohaJOSqyhhHRztCVquF9LgHngM2c0P5Y4f3lPykf-jon-w/viewform';
+
 const NOMBRES_SECCION = {
   'categorias':   'Categorías',
   'area-trabajo': 'Área de trabajo',
@@ -34,6 +37,15 @@ const BarraSuperior = ({
       <div className="logo-aplicacion">
         <span className="titulo-app">SonarBlocks</span>
         <img className="logo-cyt" src={CYT} alt="Logo CYT" />
+        <a
+          className="link-feedback"
+          href={URL_FORMULARIO_FEEDBACK}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Dar tu opinión. Abre un formulario en una pestaña nueva"
+        >
+          <Icono nombre="opinion" size={16} strokeWidth={2.5} /> Opinión
+        </a>
       </div>
 
       <div className="controles-barra">

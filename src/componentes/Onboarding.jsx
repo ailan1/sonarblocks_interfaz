@@ -8,8 +8,8 @@ const PASOS = [
     tipo: 'cualquier-tecla',
     icono: 'hola',
     titulo: '¡Bienvenido a SonarBlocks!',
-    descripcion: 'Esta app te ayuda a programar un robot usando bloques. Apretá cualquier tecla para comenzar.',
-    audio: '¡Hola! Bienvenido a SonarBlocks. Esta aplicación te ayuda a programar un robot usando bloques. Apretá cualquier tecla para comenzar el tutorial.',
+    descripcion: 'Esta app te ayuda a programar un robot usando bloques. Apretá cualquier tecla para comenzar. Si querés salir del tutorial, apretá ESCAPE.',
+    audio: '¡Hola! Bienvenido a SonarBlocks. Esta aplicación te ayuda a programar un robot usando bloques. Si en algún momento querés salir del tutorial, apretá Escape. Apretá cualquier tecla para comenzar el tutorial.',
     instruccion: 'Apretá cualquier tecla',
     teclaLabel: 'cualquier tecla',
   },
@@ -315,6 +315,13 @@ const Onboarding = ({
   }, [pararAudio, onTerminar]);
 
   const manejarTeclado = useCallback((e) => {
+    // Escape sale del tutorial en cualquier momento, aunque esté hablando
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      handleSalir();
+      return;
+    }
+
     if (faseRef.current === 'bienvenida') {
       // Evita que Enter/Espacio también "clickeen" el botón Comenzar y arranque dos veces
       e.preventDefault();
@@ -408,7 +415,7 @@ const Onboarding = ({
         }
       });
     }
-  }, [handleComenzar, avanzarPaso, hablarYEsperar, onAgregarBloque, conectarMicrobit, estadoConectar, estaConectado, onCambiarVelocidad, onCambiarTema]);
+  }, [handleComenzar, handleSalir, avanzarPaso, hablarYEsperar, onAgregarBloque, conectarMicrobit, estadoConectar, estaConectado, onCambiarVelocidad, onCambiarTema]);
 
   useEffect(() => {
     window.addEventListener('keydown', manejarTeclado);
@@ -446,7 +453,7 @@ const Onboarding = ({
           >
             <Icono nombre="ejecutar" /> Comenzar tutorial
           </button>
-          <p className="onboarding-hint">También podés presionar cualquier tecla</p>
+          <p className="onboarding-hint">También podés presionar cualquier tecla · ESCAPE para saltar el tutorial</p>
         </div>
       </div>
     );
@@ -537,6 +544,8 @@ const Onboarding = ({
             </div>
           )}
         </div>
+
+        <p className="onboarding-hint">ESCAPE para salir del tutorial</p>
 
       </div>
     </div>
